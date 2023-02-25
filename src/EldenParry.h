@@ -49,9 +49,9 @@ public:
 private:
 	void playParryEffects(RE::Actor* a_parrier);
 
-	inline bool inParryState(RE::Actor* a_parrier);
-	inline bool canParry(RE::Actor* a_parrier, RE::TESObjectREFR* a_obj);
-	inline bool inBlockAngle(RE::Actor* a_blocker, RE::TESObjectREFR* a_obj);
+	bool inParryState(RE::Actor* a_parrier);
+	bool canParry(RE::Actor* a_parrier, RE::TESObjectREFR* a_obj);
+	bool inBlockAngle(RE::Actor* a_blocker, RE::TESObjectREFR* a_obj);
 	static PRECISION_API::PreHitCallbackReturn precisionPrehitCallbackFunc(const PRECISION_API::PrecisionHitData& a_precisionHitData);
 
 	std::unordered_map<RE::Actor*, float> _parryCostQueue;
@@ -71,10 +71,3 @@ private:
 
 	bool _bUpdate;
 };
-
-
-namespace Offsets
-{
-	inline static float* g_deltaTime = (float*)RELOCATION_ID(523660, 410199).address();          // 2F6B948
-	inline static float* g_deltaTimeRealTime = (float*)RELOCATION_ID(523661, 410200).address();  // 2F6B94C
-}

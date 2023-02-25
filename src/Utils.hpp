@@ -3,32 +3,29 @@ class Utils
 {
 private:
 #define PI 3.1415926535897932384626f
-	typedef void(_fastcall* tPushActorAway_sub_14067D4A0)(RE::AIProcess* a_causer, RE::Actor* a_target, RE::NiPoint3& a_origin, float a_magnitude);
-	inline static REL::Relocation<tPushActorAway_sub_14067D4A0> _pushActorAway{ REL::ID(38858) };
 
-
-	static inline int soundHelper_a(void* manager, RE::BSSoundHandle* a2, int a3, int a4)  //sub_140BEEE70
+	static int soundHelper_a(void* manager, RE::BSSoundHandle* a2, int a3, int a4)  //sub_140BEEE70
 	{
 		using func_t = decltype(&soundHelper_a);
 		REL::Relocation<func_t> func{ RELOCATION_ID(66401, 67663) };
 		return func(manager, a2, a3, a4);
 	}
 
-	static inline void soundHelper_b(RE::BSSoundHandle* a1, RE::NiAVObject* source_node)  //sub_140BEDB10
+	static void soundHelper_b(RE::BSSoundHandle* a1, RE::NiAVObject* source_node)  //sub_140BEDB10
 	{
 		using func_t = decltype(&soundHelper_b);
 		REL::Relocation<func_t> func{ RELOCATION_ID(66375, 67636) };
 		return func(a1, source_node);
 	}
 
-	static inline char __fastcall soundHelper_c(RE::BSSoundHandle* a1)  //sub_140BED530
+	static char __fastcall soundHelper_c(RE::BSSoundHandle* a1)  //sub_140BED530
 	{
 		using func_t = decltype(&soundHelper_c);
 		REL::Relocation<func_t> func{ RELOCATION_ID(66355, 67616) };
 		return func(a1);
 	}
 
-	static inline char set_sound_position(RE::BSSoundHandle* a1, float x, float y, float z)
+	static char set_sound_position(RE::BSSoundHandle* a1, float x, float y, float z)
 	{
 		using func_t = decltype(&set_sound_position);
 		REL::Relocation<func_t> func{ RELOCATION_ID(66370, 67631) };
@@ -185,14 +182,6 @@ public:
 		a_actor->GetCollisionFilterInfo(a_collisionFilterInfo);
 		a_projectile_collidable->broadPhaseHandle.collisionFilterInfo &= (0x0000FFFF);
 		a_projectile_collidable->broadPhaseHandle.collisionFilterInfo |= (a_collisionFilterInfo << 16);
-	}
-
-	inline static void PushActorAway(RE::Actor* causer, RE::Actor* target, float magnitude)
-	{
-		auto targetPoint = causer->GetNodeByName(causer->GetActorRuntimeData().race->bodyPartData->parts[0]->targetName.c_str());
-		RE::NiPoint3 vec = targetPoint->world.translate;
-		//RE::NiPoint3 vec = causer->GetPosition();
-		_pushActorAway(causer->GetActorRuntimeData().currentProcess, target, vec, magnitude);
 	}
 
 		/*Play sound with formid at a certain actor's position.
@@ -417,9 +406,10 @@ public:
 	}
 };
 
-namespace inlineUtils
+class inlineUtils
 {
-	inline bool isPowerAttacking(RE::Actor* a_actor) {
+public:
+	static bool isPowerAttacking(RE::Actor* a_actor) {
 		if (a_actor->GetActorRuntimeData().currentProcess && a_actor->GetActorRuntimeData().currentProcess->high) {
 			auto atkData = a_actor->GetActorRuntimeData().currentProcess->high->attackData.get();
 			if (atkData) {
@@ -430,7 +420,7 @@ namespace inlineUtils
 	}
 
 	
-	inline void restoreAv(RE::Actor* a_actor, RE::ActorValue a_actorValue, float a_val)
+	static void restoreAv(RE::Actor* a_actor, RE::ActorValue a_actorValue, float a_val)
 	{
 		if (a_val == 0) {
 			return;
@@ -440,7 +430,7 @@ namespace inlineUtils
 		}
 	}
 
-	inline void damageAv(RE::Actor* a_actor, RE::ActorValue a_actorValue, float a_val)
+	static void damageAv(RE::Actor* a_actor, RE::ActorValue a_actorValue, float a_val)
 	{
 		if (a_val == 0) {
 			return;
@@ -450,7 +440,10 @@ namespace inlineUtils
 		}
 	}
 
-
-	typedef void(_fastcall* _shakeCamera)(float strength, RE::NiPoint3 source, float duration);
-	inline static REL::Relocation<_shakeCamera> shakeCamera{ RELOCATION_ID(32275, 33012) };
+	static void shakeCamera(float strength, RE::NiPoint3 source, float duration)
+	{
+		using func_t = decltype(&shakeCamera);
+		REL::Relocation<func_t> func{ RELOCATION_ID(32275, 33012) };
+		func(strength, source, duration);
+	}
 };

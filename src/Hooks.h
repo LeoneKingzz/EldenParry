@@ -13,13 +13,8 @@ namespace Hooks
 		static void install()
 		{
 			auto& trampoline = SKSE::GetTrampoline();
-
 			REL::Relocation<uintptr_t> hook{ RELOCATION_ID(37650, 38603) };  //SE:627930 + 16E => 3BEC90 AE:64D350 + 171 => 3D6720
-#ifdef SKYRIM_SUPPORT_AE
-			_getAttackStaminaCost = trampoline.write_call<5>(hook.address() + 0x171, getAttackStaminaCost);
-#else
-			_getAttackStaminaCost = trampoline.write_call<5>(hook.address() + 0x16E, getAttackStaminaCost);
-#endif
+			_getAttackStaminaCost = trampoline.write_call<5>(hook.address() + REL::Relocate(0x16E, 0x171), getAttackStaminaCost);
 			logger::info("Attack stamina hook installed.");
 		}
 
@@ -41,17 +36,12 @@ namespace Hooks
 		{
 			REL::Relocation<uintptr_t> hook{ RELOCATION_ID(37650, 38603) };  //SE:627930 + 38B AE:64D350 + 40A / 45A
 			auto& trampoline = SKSE::GetTrampoline();
-#ifdef SKYRIM_SUPPORT_AE
-			//_ProcessHit = trampoline.write_call<5>(hook.address() + 0x40A, processHit); //This func is also called on 38603, which doesn't seem to interfere with melee collision.
-			_ProcessHit = trampoline.write_call<5>(hook.address() + 0x45A, processHit);
-#else
-			_ProcessHit = trampoline.write_call<5>(hook.address() + 0x38B, processHit);
-#endif
+			_ProcessHit = trampoline.write_call<5>(hook.address() + REL::Relocate(0x38B, 0x45A), processHit);
 			logger::info("Melee Hit hook installed.");
 		}
 
 	private:
-		static inline bool shouldIgnoreHit(RE::Actor* a_aggressor, RE::Actor* a_victim)
+		static bool shouldIgnoreHit(RE::Actor* a_aggressor, RE::Actor* a_victim)
 		{
 			//for aggressor: cancle parry hitframe.
 			
@@ -132,7 +122,7 @@ namespace Hooks
 		};
 
 	private:
-		static inline bool shouldIgnoreHit(RE::Projectile* a_projectile, RE::hkpAllCdPointCollector* a_AllCdPointCollector)
+		static bool shouldIgnoreHit(RE::Projectile* a_projectile, RE::hkpAllCdPointCollector* a_AllCdPointCollector)
 		{
 			if (a_AllCdPointCollector) {
 				for (auto& hit : a_AllCdPointCollector->hits) {

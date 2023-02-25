@@ -8,7 +8,6 @@
 #	define SKSEAPI F4SEAPI
 #	define SKSEPlugin_Load F4SEPlugin_Load
 #	define SKSEPlugin_Query F4SEPlugin_Query
-#	define RUNTIME RUNTIME_1_10_163
 #else
 #	include "RE/Skyrim.h"
 #	include "SKSE/SKSE.h"

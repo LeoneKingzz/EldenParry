@@ -31,7 +31,8 @@ void EldenParry::init() {
 	_parrySound_shd = data->LookupForm<RE::BGSSoundDescriptorForm>(0xD62, "EldenParry.esp");
 	_parrySound_wpn = data->LookupForm<RE::BGSSoundDescriptorForm>(0xD63, "EldenParry.esp");
 	if (!_parrySound_shd || !_parrySound_wpn) {
-		logger::error("Parry sound not found.");
+		RE::DebugMessageBox("Parry sound not found in EldenParry.esp");
+		logger::error("Parry sound not found in EldenParry.esp");
 	}
 
 	//read fcombatHitConeAngle
@@ -58,7 +59,8 @@ void EldenParry::update() {
 			it = _parryTimer.erase(it);
 			continue;
 		}
-		it->second += *Offsets::g_deltaTime;
+		static float* g_deltaTime = (float*)RELOCATION_ID(523660, 410199).address();          // 2F6B948
+		it->second += *g_deltaTime;
 		it++;
 	}
 }
