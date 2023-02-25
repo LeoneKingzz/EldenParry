@@ -1,6 +1,9 @@
 #include "Hooks.h"
 #include "EldenParry.h"
 #include "AnimEventHandler.h"
+
+#include "Utils.hpp"
+
 void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 {
 	switch (a_msg->type) {

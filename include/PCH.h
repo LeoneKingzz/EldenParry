@@ -109,6 +109,8 @@ extern "C" DLLEXPORT  bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface * a
 #ifndef NDEBUG
 	while (!WinAPI::IsDebuggerPresent()) {};
 #endif
+	REL::Module::reset();  // Clib-NG bug workaround
+
 	InitializeLog();
 	logger::info("Loaded plugin");
 	SKSE::Init(a_skse);

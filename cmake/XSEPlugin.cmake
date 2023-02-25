@@ -114,7 +114,7 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
 endif()
 
 if (BUILD_SKYRIM)
-	find_package(CommonLibSSE REQUIRED)
+	add_subdirectory($ENV{CommonLibSSEPath} CommonLibSSE)
 else()
 	add_subdirectory(${CommonLibPath} ${CommonLibName} EXCLUDE_FROM_ALL)
 endif()

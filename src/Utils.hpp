@@ -178,8 +178,7 @@ public:
 	{
 		a_projectile->SetActorCause(a_actor->GetActorCause());
 		a_projectile->GetProjectileRuntimeData().shooter = a_actor->GetHandle();
-		uint32_t a_collisionFilterInfo;
-		a_actor->GetCollisionFilterInfo(a_collisionFilterInfo);
+		uint32_t a_collisionFilterInfo = a_actor->GetCollisionFilterInfo(a_collisionFilterInfo);
 		a_projectile_collidable->broadPhaseHandle.collisionFilterInfo &= (0x0000FFFF);
 		a_projectile_collidable->broadPhaseHandle.collisionFilterInfo |= (a_collisionFilterInfo << 16);
 	}

@@ -4,7 +4,11 @@
   "description": "",
   "license": "MIT",
   "dependencies": [
-    "commonlibsse-ng",
-    "simpleini"
+    "boost-stl-interfaces",
+    "rsm-binary-io",
+    "simpleini",
+    "spdlog",
+    "xbyak",
+    "rapidcsv"
   ]
 }
