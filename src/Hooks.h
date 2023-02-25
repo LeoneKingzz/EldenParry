@@ -55,7 +55,7 @@ namespace Hooks
 		{
 			//for aggressor: cancle parry hitframe.
 			
-			if (a_aggressor->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
+			if (a_aggressor->AsActorState()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
 				bool isAggressorShieldEquipped = Utils::isEquippedShield(a_aggressor);
 				if (!inlineUtils::isPowerAttacking(a_aggressor)) {
 					if (a_aggressor->IsPlayerRef() || Settings::bEnableNPCParry) {
@@ -71,7 +71,7 @@ namespace Hooks
 					}
 				}
 				
-			} else if (a_victim->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
+			} else if (a_victim->AsActorState()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
 				if (a_victim->IsPlayerRef() || Settings::bEnableNPCParry) {
 					bool isDefenderShieldEquipped = Utils::isEquippedShield(a_victim);
 					if ((isDefenderShieldEquipped && Settings::bEnableShieldParry) || Settings::bEnableWeaponParry) {
@@ -105,7 +105,7 @@ namespace Hooks
 		{
 			auto pc = RE::PlayerCharacter::GetSingleton();
 
-			if (pc && pc->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash && a_event->QUserEvent() == "Right Attack/Block") {
+			if (pc && pc->AsActorState()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash && a_event->QUserEvent() == "Right Attack/Block") {
 				if (a_event->IsHeld()) {
 					//EldenParry::GetSingleton()->updateBashButtonHeldTime(a_event->HeldDuration());
 				}
@@ -138,16 +138,16 @@ namespace Hooks
 				for (auto& hit : a_AllCdPointCollector->hits) {
 					auto refrA = RE::TESHavokUtilities::FindCollidableRef(*hit.rootCollidableA);
 					auto refrB = RE::TESHavokUtilities::FindCollidableRef(*hit.rootCollidableB);
-					if (refrA && refrA->formType == RE::FormType::ActorCharacter && refrA->As<RE::Actor>()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
+					if (refrA && refrA->formType == RE::FormType::ActorCharacter && refrA->As<RE::Actor>()->AsActorState()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
 						if (refrA->IsPlayerRef() || Settings::bEnableNPCParry) {
-							if ((a_projectile->spell && Settings::bEnableMagicProjectileDeflection) || Settings::bEnableArrowProjectileDeflection) {
+							if ((a_projectile->GetProjectileRuntimeData().spell && Settings::bEnableMagicProjectileDeflection) || Settings::bEnableArrowProjectileDeflection) {
 								return EldenParry::GetSingleton()->processProjectileParry(refrA->As<RE::Actor>(), a_projectile, const_cast<RE::hkpCollidable*>(hit.rootCollidableB));
 							}
 						}
 					}
-					if (refrB && refrB->formType == RE::FormType::ActorCharacter && refrB->As<RE::Actor>()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
+					if (refrB && refrB->formType == RE::FormType::ActorCharacter && refrB->As<RE::Actor>()->AsActorState()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
 						if (refrB->IsPlayerRef() || Settings::bEnableNPCParry) {
-							if ((a_projectile->spell && Settings::bEnableMagicProjectileDeflection) || Settings::bEnableArrowProjectileDeflection) {
+							if ((a_projectile->GetProjectileRuntimeData().spell && Settings::bEnableMagicProjectileDeflection) || Settings::bEnableArrowProjectileDeflection) {
 								return EldenParry::GetSingleton()->processProjectileParry(refrB->As<RE::Actor>(), a_projectile, const_cast<RE::hkpCollidable*>(hit.rootCollidableA));
 							}
 						}

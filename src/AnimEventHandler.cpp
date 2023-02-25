@@ -27,7 +27,7 @@ RE::BSEventNotifyControl animEventHandler::HookedProcessEvent(RE::BSAnimationGra
 	std::string_view eventTag = a_event.tag.data();
 	switch (hash(eventTag.data(), eventTag.size())) {
 	case "blockStop"_h:
-		if (const_cast<RE::TESObjectREFR*>(a_event.holder)->As<RE::Actor>()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
+		if (const_cast<RE::TESObjectREFR*>(a_event.holder)->As<RE::Actor>()->AsActorState()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
 			EldenParry::GetSingleton()->startTimingParry((RE::Actor*)(a_event.holder));
 		}
 		break;

@@ -1,7 +1,7 @@
 #include "Settings.h"
 
 void Settings::readSettings() {
-	INFO("Reading settings...");
+	logger::info("Reading settings...");
 	CSimpleIniA settings;
 	readSimpleIni(settings, settingsDir);
 
@@ -27,5 +27,5 @@ void Settings::readSettings() {
 	ReadFloatSetting(settings, "Experience", "fProjectileParryExp", fProjectileParryExp);
 	ReadFloatSetting(settings, "Experience", "fMeleeParryExp", fMeleeParryExp);
 
-	INFO("done");
+	logger::info("done");
 }

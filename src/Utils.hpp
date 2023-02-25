@@ -180,7 +180,7 @@ public:
 	static void resetProjectileOwner(RE::Projectile* a_projectile, RE::Actor* a_actor, RE::hkpCollidable* a_projectile_collidable)
 	{
 		a_projectile->SetActorCause(a_actor->GetActorCause());
-		a_projectile->shooter = a_actor->GetHandle();
+		a_projectile->GetProjectileRuntimeData().shooter = a_actor->GetHandle();
 		uint32_t a_collisionFilterInfo;
 		a_actor->GetCollisionFilterInfo(a_collisionFilterInfo);
 		a_projectile_collidable->broadPhaseHandle.collisionFilterInfo &= (0x0000FFFF);
@@ -189,10 +189,10 @@ public:
 
 	inline static void PushActorAway(RE::Actor* causer, RE::Actor* target, float magnitude)
 	{
-		auto targetPoint = causer->GetNodeByName(causer->race->bodyPartData->parts[0]->targetName.c_str());
+		auto targetPoint = causer->GetNodeByName(causer->GetActorRuntimeData().race->bodyPartData->parts[0]->targetName.c_str());
 		RE::NiPoint3 vec = targetPoint->world.translate;
 		//RE::NiPoint3 vec = causer->GetPosition();
-		_pushActorAway(causer->currentProcess, target, vec, magnitude);
+		_pushActorAway(causer->GetActorRuntimeData().currentProcess, target, vec, magnitude);
 	}
 
 		/*Play sound with formid at a certain actor's position.
@@ -215,12 +215,12 @@ public:
 
 	static void ReflectProjectile(RE::Projectile* a_projectile)
 	{
-		a_projectile->linearVelocity *= -1.f;
+		a_projectile->GetProjectileRuntimeData().linearVelocity *= -1.f;
 
 		// rotate model
 		auto projectileNode = a_projectile->Get3D2();
 		if (projectileNode) {
-			RE::NiPoint3 direction = a_projectile->linearVelocity;
+			RE::NiPoint3 direction = a_projectile->GetProjectileRuntimeData().linearVelocity;
 			direction.Unitize();
 
 			a_projectile->data.angle.x = asin(direction.z);
@@ -241,10 +241,10 @@ public:
 	/*Get the body position of this actor.*/
 	static void getBodyPos(RE::Actor* a_actor, RE::NiPoint3& pos)
 	{
-		if (!a_actor->race) {
+		if (!a_actor->GetActorRuntimeData().race) {
 			return;
 		}
-		RE::BGSBodyPart* bodyPart = a_actor->race->bodyPartData->parts[0];
+		RE::BGSBodyPart* bodyPart = a_actor->GetActorRuntimeData().race->bodyPartData->parts[0];
 		if (!bodyPart) {
 			return;
 		}
@@ -259,7 +259,7 @@ public:
 	/*retarget this projectile to a_target.*/
 	static void RetargetProjectile(RE::Projectile* a_projectile, RE::TESObjectREFR* a_target)
 	{
-		a_projectile->desiredTarget = a_target;
+		a_projectile->GetProjectileRuntimeData().desiredTarget = a_target;
 
 		auto projectileNode = a_projectile->Get3D2();
 		auto targetHandle = a_target->GetHandle();
@@ -273,7 +273,7 @@ public:
 		targetHandle.get()->GetLinearVelocity(targetVelocity);
 
 		float projectileGravity = 0.f;
-		if (auto ammo = a_projectile->ammoSource) {
+		if (auto ammo = a_projectile->GetProjectileRuntimeData().ammoSource) {
 			if (auto bgsProjectile = ammo->data.projectile) {
 				projectileGravity = bgsProjectile->data.gravity;
 				if (auto bhkWorld = a_projectile->parentCell->GetbhkWorld()) {
@@ -288,10 +288,10 @@ public:
 			}
 		}
 
-		PredictAimProjectile(a_projectile->data.location, targetPos, targetVelocity, projectileGravity, a_projectile->linearVelocity);
+		PredictAimProjectile(a_projectile->data.location, targetPos, targetVelocity, projectileGravity, a_projectile->GetProjectileRuntimeData().linearVelocity);
 
 		// rotate
-		RE::NiPoint3 direction = a_projectile->linearVelocity;
+		RE::NiPoint3 direction = a_projectile->GetProjectileRuntimeData().linearVelocity;
 		direction.Unitize();
 
 		a_projectile->data.angle.x = asin(direction.z);
@@ -308,17 +308,30 @@ public:
 		SetRotationMatrix(projectileNode->local.rotate, -direction.x, direction.y, direction.z);
 	}
 
+	static RE::BSTimer* BSTimer_GetSingleton()
+	{
+		REL::Relocation<RE::BSTimer**> singleton{ REL::RelocationID(523657, 410196)};
+		return *singleton;
+	}
+
+	static RE::BSTempEffectParticle* BSTimer_SetGlobalTimeMultiplier(RE::BSTimer* This, float a_percentage, bool a_unk = true)
+	{
+		using func_t = decltype(&BSTimer_SetGlobalTimeMultiplier);
+		REL::Relocation<func_t> func{ RELOCATION_ID(66988, 68245) };
+		return func(This, a_percentage, a_unk);
+	}
+
 	/*Slow down game time for a set period.
 	@param a_duration: duration of the slow time.
 	@param a_percentage: relative time speed to normal time(1).*/
 	static void slowTime(float a_duration, float a_percentage)
 	{
 		int duration_milisec = static_cast<int>(a_duration * 1000);
-		RE::BSTimer::setCurrentGlobalTimeMult(a_percentage);
+		BSTimer_SetGlobalTimeMultiplier(BSTimer_GetSingleton(), a_percentage);
 		/*Reset time here*/
 		auto resetSlowTime = [](int a_duration) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(a_duration));
-			RE::BSTimer::setCurrentGlobalTimeMult(1);
+			BSTimer_SetGlobalTimeMultiplier(BSTimer_GetSingleton(), 1);
 		};
 		std::jthread resetThread(resetSlowTime, duration_milisec);
 		resetThread.detach();
@@ -355,9 +368,16 @@ private:
 	}
 
 public:
+	static RE::BSTempEffectParticle* TESObjectCELL_PlaceParticleEffect(RE::TESObjectCELL* a_cell, float a_lifetime, const char* a_modelName, const RE::NiMatrix3& a_normal, const RE::NiPoint3& a_pos, float a_scale, std::uint32_t a_flags, RE::NiAVObject* a_target)
+	{
+		using func_t = decltype(&TESObjectCELL_PlaceParticleEffect);
+		REL::Relocation<func_t> func{ RELOCATION_ID(29219, 30072) };
+		return func(a_cell, a_lifetime, a_modelName, a_normal, a_pos, a_scale, a_flags, a_target);
+	}
+
 	static void playBlockSpark(RE::Actor* a_actor)
 	{
-		if (!a_actor || !a_actor->currentProcess || !a_actor->currentProcess->high || !a_actor->Get3D()) {
+		if (!a_actor || !a_actor->GetActorRuntimeData().currentProcess || !a_actor->GetActorRuntimeData().currentProcess->high || !a_actor->Get3D()) {
 			return;
 		}
 		RE::BIPED_OBJECT BipeObjIndex;
@@ -393,15 +413,15 @@ public:
 			}
 		}
 		//DEBUG("Get Weapon Spark Position!");
-		a_actor->GetParentCell()->PlaceParticleEffect(0.0f, modelName, defenderNode->world.rotate, defenderNode->worldBound.center, 1.0f, 4U, defenderNode.get());
+		TESObjectCELL_PlaceParticleEffect(a_actor->GetParentCell(), 0.0f, modelName, defenderNode->world.rotate, defenderNode->worldBound.center, 1.0f, 4U, defenderNode.get());
 	}
 };
 
 namespace inlineUtils
 {
 	inline bool isPowerAttacking(RE::Actor* a_actor) {
-		if (a_actor->currentProcess && a_actor->currentProcess->high) {
-			auto atkData = a_actor->currentProcess->high->attackData.get();
+		if (a_actor->GetActorRuntimeData().currentProcess && a_actor->GetActorRuntimeData().currentProcess->high) {
+			auto atkData = a_actor->GetActorRuntimeData().currentProcess->high->attackData.get();
 			if (atkData) {
 				return atkData->data.flags.any(RE::AttackData::AttackFlag::kPowerAttack);
 			}

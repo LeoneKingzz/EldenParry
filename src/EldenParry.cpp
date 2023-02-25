@@ -5,33 +5,33 @@ using uniqueLocker = std::unique_lock<std::shared_mutex>;
 using sharedLocker = std::shared_lock<std::shared_mutex>;
 
 void EldenParry::init() {
-	INFO("Obtaining precision API...");
+	logger::info("Obtaining precision API...");
 	_precision_API = reinterpret_cast<PRECISION_API::IVPrecision1*>(PRECISION_API::RequestPluginAPI());
 	if (_precision_API) {
-		INFO("Precision API successfully obtained.");
+		logger::info("Precision API successfully obtained.");
 		Settings::facts::isPrecisionAPIObtained = true;
 		if (_precision_API->AddPreHitCallback(SKSE::GetPluginHandle(), precisionPrehitCallbackFunc) ==
 			PRECISION_API::APIResult::OK) {
-			INFO("Successfully registered precision API prehit callback.");
+			logger::info("Successfully registered precision API prehit callback.");
 		}
 	} else {
-		INFO("Precision API not found.");
+		logger::info("Precision API not found.");
 	}
-	INFO("Obtaining Valhalla Combat API...");
+	logger::info("Obtaining Valhalla Combat API...");
 	_ValhallaCombat_API = reinterpret_cast<VAL_API::IVVAL1*>(VAL_API::RequestPluginAPI());
 	if (_ValhallaCombat_API) {
-		INFO("Valhalla Combat API successfully obtained.");
+		logger::info("Valhalla Combat API successfully obtained.");
 		Settings::facts::isValhallaCombatAPIObtained = true;
 	}
 	else {
-		INFO("Valhalla Combat API not found.");
+		logger::info("Valhalla Combat API not found.");
 	}
 	//read parry sound
 	auto data = RE::TESDataHandler::GetSingleton();
 	_parrySound_shd = data->LookupForm<RE::BGSSoundDescriptorForm>(0xD62, "EldenParry.esp");
 	_parrySound_wpn = data->LookupForm<RE::BGSSoundDescriptorForm>(0xD63, "EldenParry.esp");
 	if (!_parrySound_shd || !_parrySound_wpn) {
-		ERROR("Parry sound not found.");
+		logger::error("Parry sound not found.");
 	}
 
 	//read fcombatHitConeAngle
@@ -109,7 +109,7 @@ bool EldenParry::inParryState(RE::Actor* a_actor)
 
 bool EldenParry::canParry(RE::Actor* a_parrier, RE::TESObjectREFR* a_obj)
 {
-	logger::info(a_parrier->GetName());
+	logger::info("{}",a_parrier->GetName());
 	return inParryState(a_parrier) && inBlockAngle(a_parrier, a_obj);
 }
 
@@ -148,8 +148,8 @@ bool EldenParry::processProjectileParry(RE::Actor* a_parrier, RE::Projectile* a_
 {
 	if (canParry(a_parrier, a_projectile)) {
 		RE::TESObjectREFR* shooter = nullptr;
-		if (a_projectile->shooter && a_projectile->shooter.get()) {
-			shooter = a_projectile->shooter.get().get();
+		if (a_projectile->GetProjectileRuntimeData().shooter && a_projectile->GetProjectileRuntimeData().shooter.get()) {
+			shooter = a_projectile->GetProjectileRuntimeData().shooter.get().get();
 		}
 
 		Utils::resetProjectileOwner(a_projectile, a_parrier, a_projectile_collidable);
@@ -176,7 +176,7 @@ bool EldenParry::processProjectileParry(RE::Actor* a_parrier, RE::Projectile* a_
 
 void EldenParry::processGuardBash(RE::Actor* a_basher, RE::Actor* a_blocker)
 {
-	if (!a_blocker->IsBlocking() || !inBlockAngle(a_blocker, a_basher) || a_blocker->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
+	if (!a_blocker->IsBlocking() || !inBlockAngle(a_blocker, a_basher) || a_blocker->AsActorState()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
 		return;
 	}
 	Utils::triggerStagger(a_basher, a_blocker, 5);
@@ -211,7 +211,7 @@ using uniqueLocker = std::unique_lock<std::shared_mutex>;
 using sharedLocker = std::shared_lock<std::shared_mutex>;
 
 void EldenParry::applyParryCost(RE::Actor* a_actor) {
-	//logger::info("apply parry cost for {}", a_actor->GetName());
+	//logger::logger::info("apply parry cost for {}", a_actor->GetName());
 	{
 		uniqueLocker lock(mtx_parryCostQueue);
 		sharedLocker lock2(mtx_parrySuccessActors);
@@ -227,13 +227,13 @@ void EldenParry::applyParryCost(RE::Actor* a_actor) {
 }
 
 void EldenParry::cacheParryCost(RE::Actor* a_actor, float a_cost) {
-	//logger::info("cache parry cost for {}: {}", a_actor->GetName(), a_cost);
+	//logger::logger::info("cache parry cost for {}: {}", a_actor->GetName(), a_cost);
 	uniqueLocker lock(mtx_parryCostQueue);
 	_parryCostQueue[a_actor] = a_cost;
 }
 
 void EldenParry::negateParryCost(RE::Actor* a_actor) {
-	//logger::info("negate parry cost for {}", a_actor->GetName());
+	//logger::logger::info("negate parry cost for {}", a_actor->GetName());
 	uniqueLocker lock(mtx_parrySuccessActors);
 	_parrySuccessActors.insert(a_actor);
 }
