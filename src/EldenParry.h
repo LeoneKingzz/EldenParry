@@ -65,9 +65,9 @@ private:
 	float _GMST_fCombatHitConeAngle;
 	float _parryAngle;
 
-	mutable std::shared_mutex mtx_parryCostQueue;
-	mutable std::shared_mutex mtx_parrySuccessActors;
-	mutable std::shared_mutex mtx_parryTimer;
+	std::shared_mutex mtx_parryCostQueue;
+	std::shared_mutex mtx_parrySuccessActors;
+	std::shared_mutex mtx_parryTimer;
 
 	bool _bUpdate;
 };

@@ -208,35 +208,28 @@ void EldenParry::playParryEffects(RE::Actor* a_parrier) {
 	
 }
 
-
-using uniqueLocker = std::unique_lock<std::shared_mutex>;
-using sharedLocker = std::shared_lock<std::shared_mutex>;
-
 void EldenParry::applyParryCost(RE::Actor* a_actor) {
 	//logger::logger::info("apply parry cost for {}", a_actor->GetName());
-	{
-		uniqueLocker lock(mtx_parryCostQueue);
-		sharedLocker lock2(mtx_parrySuccessActors);
-		if (_parryCostQueue.contains(a_actor)) {
-			if (!_parrySuccessActors.contains(a_actor)) {
-				inlineUtils::damageAv(a_actor, RE::ActorValue::kStamina, _parryCostQueue[a_actor]);
-			}
-			_parryCostQueue.erase(a_actor);
+	std::lock_guard<std::shared_mutex> lock(mtx_parryCostQueue);
+	std::lock_guard<std::shared_mutex> lock2(mtx_parrySuccessActors);
+	if (_parryCostQueue.contains(a_actor)) {
+		if (!_parrySuccessActors.contains(a_actor)) {
+			inlineUtils::damageAv(a_actor, RE::ActorValue::kStamina, _parryCostQueue[a_actor]);
 		}
+		_parryCostQueue.erase(a_actor);
 	}
-	uniqueLocker lock(mtx_parrySuccessActors);
 	_parrySuccessActors.erase(a_actor);
 }
 
 void EldenParry::cacheParryCost(RE::Actor* a_actor, float a_cost) {
 	//logger::logger::info("cache parry cost for {}: {}", a_actor->GetName(), a_cost);
-	uniqueLocker lock(mtx_parryCostQueue);
+	std::lock_guard<std::shared_mutex> lock(mtx_parryCostQueue);
 	_parryCostQueue[a_actor] = a_cost;
 }
 
 void EldenParry::negateParryCost(RE::Actor* a_actor) {
 	//logger::logger::info("negate parry cost for {}", a_actor->GetName());
-	uniqueLocker lock(mtx_parrySuccessActors);
+	std::lock_guard<std::shared_mutex> lock(mtx_parrySuccessActors);
 	_parrySuccessActors.insert(a_actor);
 }
 

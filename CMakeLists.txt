@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.21)
 
 project(
 	EldenParry
-	VERSION 1.3.1
+	VERSION 1.3.3
 	LANGUAGES CXX
 )
 
