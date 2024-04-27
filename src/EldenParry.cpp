@@ -1,5 +1,5 @@
 #include "EldenParry.h"
-#include "Milf.h"
+#include "Settings.h"
 #include "Utils.hpp"
 using uniqueLocker = std::unique_lock<std::shared_mutex>;
 using sharedLocker = std::shared_lock<std::shared_mutex>;
@@ -9,7 +9,7 @@ void EldenParry::init() {
 	_precision_API = reinterpret_cast<PRECISION_API::IVPrecision1*>(PRECISION_API::RequestPluginAPI());
 	if (_precision_API) {
 		logger::info("Precision API successfully obtained.");
-		Milf::facts::isPrecisionAPIObtained = true;
+		Settings::facts::isPrecisionAPIObtained = true;
 		if (_precision_API->AddPreHitCallback(SKSE::GetPluginHandle(), precisionPrehitCallbackFunc) ==
 			PRECISION_API::APIResult::OK) {
 			logger::info("Successfully registered precision API prehit callback.");
@@ -21,7 +21,7 @@ void EldenParry::init() {
 	_ValhallaCombat_API = reinterpret_cast<VAL_API::IVVAL1*>(VAL_API::RequestPluginAPI());
 	if (_ValhallaCombat_API) {
 		logger::info("Valhalla Combat API successfully obtained.");
-		Milf::facts::isValhallaCombatAPIObtained = true;
+		Settings::facts::isValhallaCombatAPIObtained = true;
 	}
 	else {
 		logger::info("Valhalla Combat API not found.");
@@ -55,7 +55,7 @@ void EldenParry::update() {
 			it = _parryTimer.erase(it);
 			continue;
 		}
-		if (it->second > Milf::fParryWindow_End) {
+		if (it->second > Settings::fParryWindow_End) {
 			it = _parryTimer.erase(it);
 			continue;
 		}
@@ -104,7 +104,7 @@ bool EldenParry::inParryState(RE::Actor* a_actor)
 	sharedLocker lock(mtx_parryTimer);
 	auto it = _parryTimer.find(a_actor);
 	if (it != _parryTimer.end()) {
-		return it->second >= Milf::fParryWindow_Start;
+		return it->second >= Settings::fParryWindow_Start;
 	}
 	return false;
 }
@@ -112,11 +112,11 @@ bool EldenParry::inParryState(RE::Actor* a_actor)
 bool EldenParry::ParryContext(RE::Actor* a_aggressor, RE::Actor* a_victim)
 {
 	bool isDefenderShieldEquipped = Utils::isEquippedShield(a_victim);
-	if ((isDefenderShieldEquipped && Milf::bEnableShieldParry))
+	if ((isDefenderShieldEquipped && Settings::bEnableShieldParry))
 	{
 		return true;
 
-	} else if (Milf::bEnableWeaponParry)
+	} else if (Settings::bEnableWeaponParry)
 	{
 		RE::AIProcess *const attackerAI = a_aggressor->GetActorRuntimeData().currentProcess;
 		RE::AIProcess *const targetAI = a_victim->GetActorRuntimeData().currentProcess;
@@ -148,13 +148,13 @@ bool EldenParry::processMeleeParry(RE::Actor* a_attacker, RE::Actor* a_parrier)
 	if (canParry(a_parrier, a_attacker, a_attacker)) {
 		playParryEffects(a_parrier);
 		Utils::triggerStagger(a_parrier, a_attacker, 10);
-		if (Milf::facts::isValhallaCombatAPIObtained) {
+		if (Settings::facts::isValhallaCombatAPIObtained) {
 			_ValhallaCombat_API->processStunDamage(VAL_API::STUNSOURCE::parry, nullptr, a_parrier, a_attacker, 0);
 		}
 		if (a_parrier->IsPlayerRef()) {
-			RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Milf::fMeleeParryExp);
+			RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Settings::fMeleeParryExp);
 		}
-		if (Milf::bSuccessfulParryNoCost) {
+		if (Settings::bSuccessfulParryNoCost) {
 			negateParryCost(a_parrier);
 		}
 		send_melee_parry_event(a_attacker);
@@ -191,9 +191,9 @@ bool EldenParry::processProjectileParry(RE::Actor* a_parrier, RE::Projectile* a_
 		
 		playParryEffects(a_parrier);
 		if (a_parrier->IsPlayerRef()) {
-			RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Milf::fProjectileParryExp);
+			RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Settings::fProjectileParryExp);
 		}
-		if (Milf::bSuccessfulParryNoCost) {
+		if (Settings::bSuccessfulParryNoCost) {
 			negateParryCost(a_parrier);
 		}
 		send_ranged_parry_event();
@@ -210,25 +210,25 @@ void EldenParry::processGuardBash(RE::Actor* a_basher, RE::Actor* a_blocker)
 	}
 	Utils::triggerStagger(a_basher, a_blocker, 5);
 	playGuardBashEffects(a_basher);
-	RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Milf::fGuardBashExp);
+	RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Settings::fGuardBashExp);
 }
 
 void EldenParry::playParryEffects(RE::Actor* a_parrier) {
-	if (Milf::bEnableParrySoundEffect) {
+	if (Settings::bEnableParrySoundEffect) {
 		if (Utils::isEquippedShield(a_parrier)) {
 			Utils::playSound(a_parrier, _parrySound_shd);
 		} else {
 			Utils::playSound(a_parrier, _parrySound_wpn);
 		}
 	}
-	if (Milf::bEnableParrySparkEffect) {
+	if (Settings::bEnableParrySparkEffect) {
 		blockSpark::playBlockSpark(a_parrier);
 	}
 	if (a_parrier->IsPlayerRef()) {
-		if (Milf::bEnableSlowTimeEffect) {
+		if (Settings::bEnableSlowTimeEffect) {
 			Utils::slowTime(0.2f, 0.3f);
 		}
-		if (Milf::bEnableScreenShakeEffect) {
+		if (Settings::bEnableScreenShakeEffect) {
 			inlineUtils::shakeCamera(1.5, a_parrier->GetPosition(), 0.4f);
 		}
 	}
@@ -261,17 +261,17 @@ void EldenParry::negateParryCost(RE::Actor* a_actor) {
 }
 
 void EldenParry::playGuardBashEffects(RE::Actor* a_actor) {
-	if (Milf::bEnableParrySoundEffect) {
+	if (Settings::bEnableParrySoundEffect) {
 			Utils::playSound(a_actor, _parrySound_shd);
 	}
-	if (Milf::bEnableParrySparkEffect) {
+	if (Settings::bEnableParrySparkEffect) {
 		blockSpark::playBlockSpark(a_actor);
 	}
 	if (a_actor->IsPlayerRef()) {
-		if (Milf::bEnableSlowTimeEffect) {
+		if (Settings::bEnableSlowTimeEffect) {
 			Utils::slowTime(0.2f, 0.3f);
 		}
-		if (Milf::bEnableScreenShakeEffect) {
+		if (Settings::bEnableScreenShakeEffect) {
 			inlineUtils::shakeCamera(1.5, a_actor->GetPosition(), 0.4f);
 		}
 	}

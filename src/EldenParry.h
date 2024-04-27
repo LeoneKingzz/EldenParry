@@ -6,6 +6,7 @@
 #include <shared_mutex>
 
 #include <unordered_set>
+using std::string;
 
 class EldenParry
 {
