@@ -147,7 +147,7 @@ bool EldenParry::processMeleeParry(RE::Actor* a_attacker, RE::Actor* a_parrier)
 {
 	if (canParry(a_parrier, a_attacker, a_attacker)) {
 		playParryEffects(a_parrier);
-		Utils::triggerStagger(a_parrier, a_attacker, 10);
+		Utils::triggerStagger(a_parrier, a_attacker);
 		if (Settings::facts::isValhallaCombatAPIObtained) {
 			_ValhallaCombat_API->processStunDamage(VAL_API::STUNSOURCE::parry, nullptr, a_parrier, a_attacker, 0);
 		}
@@ -208,7 +208,7 @@ void EldenParry::processGuardBash(RE::Actor* a_basher, RE::Actor* a_blocker)
 	if (!a_blocker->IsBlocking() || !inBlockAngle(a_blocker, a_basher) || a_blocker->AsActorState()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
 		return;
 	}
-	Utils::triggerStagger(a_basher, a_blocker, 5);
+	Utils::triggerStagger(a_basher, a_blocker);
 	playGuardBashEffects(a_basher);
 	RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Settings::fGuardBashExp);
 }
@@ -330,8 +330,7 @@ const RE::TESObjectWEAP *const EldenParry::GetAttackWeapon(RE::AIProcess *const 
 	return nullptr;
 }
 
-double EldenParry::GetScore(RE::Actor *actor, const RE::TESObjectWEAP *weapon,
-							RE::AIProcess *const actorAI, const Milf::Scores &scoreSettings)
+double GetScore(RE::Actor *actor, const RE::TESObjectWEAP *weapon, RE::AIProcess *const actorAI, const Milf::Scores &scoreSettings)
 {
 	double score = 0.0;
 

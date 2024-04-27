@@ -158,7 +158,7 @@ private:
 
 
 public:
-	static void triggerStagger(RE::Actor* a_aggressor, RE::Actor* a_reactor, float a_reactionMagnitude)
+	static void triggerStagger(RE::Actor* a_aggressor, RE::Actor* a_reactor)
 	{
 		bool isDefenderShieldEquipped = Utils::isEquippedShield(a_aggressor);
 		if ((isDefenderShieldEquipped && Settings::bEnableShieldParry)) {
