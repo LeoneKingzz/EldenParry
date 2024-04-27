@@ -14,7 +14,7 @@ public:
 							const RE::TESObjectWEAP *targetWeapon, RE::AIProcess *const attackerAI,
 							RE::AIProcess *const targetAI);
 	double GetScore(RE::Actor *actor, const RE::TESObjectWEAP *weapon,
-					RE::AIProcess *const actorAI, const Settings::Scores &scoreSettings);
+					RE::AIProcess *const actorAI, const Milf::Scores& scoreMilf);
 	const RE::TESObjectWEAP *const GetAttackWeapon(RE::AIProcess *const aiProcess);
 
 	static double riposteScore;
@@ -81,4 +81,114 @@ private:
 	std::shared_mutex mtx_parryTimer;
 
 	bool _bUpdate;
+};
+
+class Milf
+{
+public:
+	[[nodiscard]] static Milf *GetSingleton();
+
+	void Load();
+
+	struct Core
+	{
+		void Load(CSimpleIniA &a_ini);
+
+		bool useScoreSystem{true};
+	} core;
+
+	struct Scores
+	{
+		void Load(CSimpleIniA &a_ini);
+
+		double scoreDiffThreshold{20.0};
+
+		double weaponSkillWeight{1.0};
+
+		double oneHandDaggerScore{0.0};
+		double oneHandSwordScore{20.0};
+		double oneHandAxeScore{25.0};
+		double oneHandMaceScore{25.0};
+		double oneHandKatanaScore{30.0};
+		double oneHandRapierScore{15.0};
+		double oneHandClawsScore{10.0};
+		double oneHandWhipScore{-100.0};
+		double twoHandSwordScore{40.0};
+		double twoHandAxeScore{50.0};
+		double twoHandWarhammerScore{50.0};
+		double twoHandPikeScore{30.0};
+		double twoHandHalberdScore{45.0};
+		double twoHandQuarterstaffScore{50.0};
+
+		double altmerScore{-15.0};
+		double argonianScore{0.0};
+		double bosmerScore{-10.0};
+		double bretonScore{-10.0};
+		double dunmerScore{-5.0};
+		double imperialScore{0.0};
+		double khajiitScore{5.0};
+		double nordScore{10.0};
+		double orcScore{20.0};
+		double redguardScore{10.0};
+
+		double femaleScore{-10.0};
+
+		double powerAttackScore{25.0};
+
+		double playerScore{0.0};
+	} scores;
+
+private:
+	Milf() = default;
+	Milf(const Milf &) = delete;
+	Milf(Milf &&) = delete;
+	~Milf() = default;
+
+	Milf &operator=(const Milf &) = delete;
+	Milf &operator=(Milf &&) = delete;
+
+	struct detail
+	{
+
+		// Thanks to: https://github.com/powerof3/CLibUtil
+		template <class T>
+		static T &get_value(CSimpleIniA &a_ini, T &a_value, const char *a_section, const char *a_key, const char *a_comment,
+							const char *a_delimiter = R"(|)")
+		{
+			if constexpr (std::is_same_v<T, bool>)
+			{
+				a_value = a_ini.GetBoolValue(a_section, a_key, a_value);
+				a_ini.SetBoolValue(a_section, a_key, a_value, a_comment);
+			}
+			else if constexpr (std::is_floating_point_v<T>)
+			{
+				a_value = static_cast<float>(a_ini.GetDoubleValue(a_section, a_key, a_value));
+				a_ini.SetDoubleValue(a_section, a_key, a_value, a_comment);
+			}
+			else if constexpr (std::is_enum_v<T>)
+			{
+				a_value = string::template to_num<T>(
+					a_ini.GetValue(a_section, a_key, std::to_string(std::to_underlying(a_value)).c_str()));
+				a_ini.SetValue(a_section, a_key, std::to_string(std::to_underlying(a_value)).c_str(), a_comment);
+			}
+			else if constexpr (std::is_arithmetic_v<T>)
+			{
+				a_value = string::template to_num<T>(a_ini.GetValue(a_section, a_key, std::to_string(a_value).c_str()));
+				a_ini.SetValue(a_section, a_key, std::to_string(a_value).c_str(), a_comment);
+			}
+			else if constexpr (std::is_same_v<T, std::vector<std::string>>)
+			{
+				a_value = string::split(a_ini.GetValue(a_section, a_key, string::join(a_value, a_delimiter).c_str()),
+										a_delimiter);
+				a_ini.SetValue(a_section, a_key, string::join(a_value, a_delimiter).c_str(), a_comment);
+			}
+			else
+			{
+				a_value = a_ini.GetValue(a_section, a_key, a_value.c_str());
+				a_ini.SetValue(a_section, a_key, a_value.c_str(), a_comment);
+			}
+			return a_value;
+		}
+	};
+
 };

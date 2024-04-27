@@ -1,5 +1,5 @@
 #include "EldenParry.h"
-#include "Settings.h"
+#include "Milf.h"
 #include "Utils.hpp"
 using uniqueLocker = std::unique_lock<std::shared_mutex>;
 using sharedLocker = std::shared_lock<std::shared_mutex>;
@@ -9,7 +9,7 @@ void EldenParry::init() {
 	_precision_API = reinterpret_cast<PRECISION_API::IVPrecision1*>(PRECISION_API::RequestPluginAPI());
 	if (_precision_API) {
 		logger::info("Precision API successfully obtained.");
-		Settings::facts::isPrecisionAPIObtained = true;
+		Milf::facts::isPrecisionAPIObtained = true;
 		if (_precision_API->AddPreHitCallback(SKSE::GetPluginHandle(), precisionPrehitCallbackFunc) ==
 			PRECISION_API::APIResult::OK) {
 			logger::info("Successfully registered precision API prehit callback.");
@@ -21,7 +21,7 @@ void EldenParry::init() {
 	_ValhallaCombat_API = reinterpret_cast<VAL_API::IVVAL1*>(VAL_API::RequestPluginAPI());
 	if (_ValhallaCombat_API) {
 		logger::info("Valhalla Combat API successfully obtained.");
-		Settings::facts::isValhallaCombatAPIObtained = true;
+		Milf::facts::isValhallaCombatAPIObtained = true;
 	}
 	else {
 		logger::info("Valhalla Combat API not found.");
@@ -55,7 +55,7 @@ void EldenParry::update() {
 			it = _parryTimer.erase(it);
 			continue;
 		}
-		if (it->second > Settings::fParryWindow_End) {
+		if (it->second > Milf::fParryWindow_End) {
 			it = _parryTimer.erase(it);
 			continue;
 		}
@@ -104,7 +104,7 @@ bool EldenParry::inParryState(RE::Actor* a_actor)
 	sharedLocker lock(mtx_parryTimer);
 	auto it = _parryTimer.find(a_actor);
 	if (it != _parryTimer.end()) {
-		return it->second >= Settings::fParryWindow_Start;
+		return it->second >= Milf::fParryWindow_Start;
 	}
 	return false;
 }
@@ -112,11 +112,11 @@ bool EldenParry::inParryState(RE::Actor* a_actor)
 bool EldenParry::ParryContext(RE::Actor* a_aggressor, RE::Actor* a_victim)
 {
 	bool isDefenderShieldEquipped = Utils::isEquippedShield(a_victim);
-	if ((isDefenderShieldEquipped && Settings::bEnableShieldParry))
+	if ((isDefenderShieldEquipped && Milf::bEnableShieldParry))
 	{
 		return true;
 
-	} else if (Settings::bEnableWeaponParry)
+	} else if (Milf::bEnableWeaponParry)
 	{
 		RE::AIProcess *const attackerAI = a_aggressor->GetActorRuntimeData().currentProcess;
 		RE::AIProcess *const targetAI = a_victim->GetActorRuntimeData().currentProcess;
@@ -148,13 +148,13 @@ bool EldenParry::processMeleeParry(RE::Actor* a_attacker, RE::Actor* a_parrier)
 	if (canParry(a_parrier, a_attacker, a_attacker)) {
 		playParryEffects(a_parrier);
 		Utils::triggerStagger(a_parrier, a_attacker, 10);
-		if (Settings::facts::isValhallaCombatAPIObtained) {
+		if (Milf::facts::isValhallaCombatAPIObtained) {
 			_ValhallaCombat_API->processStunDamage(VAL_API::STUNSOURCE::parry, nullptr, a_parrier, a_attacker, 0);
 		}
 		if (a_parrier->IsPlayerRef()) {
-			RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Settings::fMeleeParryExp);
+			RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Milf::fMeleeParryExp);
 		}
-		if (Settings::bSuccessfulParryNoCost) {
+		if (Milf::bSuccessfulParryNoCost) {
 			negateParryCost(a_parrier);
 		}
 		send_melee_parry_event(a_attacker);
@@ -191,9 +191,9 @@ bool EldenParry::processProjectileParry(RE::Actor* a_parrier, RE::Projectile* a_
 		
 		playParryEffects(a_parrier);
 		if (a_parrier->IsPlayerRef()) {
-			RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Settings::fProjectileParryExp);
+			RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Milf::fProjectileParryExp);
 		}
-		if (Settings::bSuccessfulParryNoCost) {
+		if (Milf::bSuccessfulParryNoCost) {
 			negateParryCost(a_parrier);
 		}
 		send_ranged_parry_event();
@@ -210,25 +210,25 @@ void EldenParry::processGuardBash(RE::Actor* a_basher, RE::Actor* a_blocker)
 	}
 	Utils::triggerStagger(a_basher, a_blocker, 5);
 	playGuardBashEffects(a_basher);
-	RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Settings::fGuardBashExp);
+	RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Milf::fGuardBashExp);
 }
 
 void EldenParry::playParryEffects(RE::Actor* a_parrier) {
-	if (Settings::bEnableParrySoundEffect) {
+	if (Milf::bEnableParrySoundEffect) {
 		if (Utils::isEquippedShield(a_parrier)) {
 			Utils::playSound(a_parrier, _parrySound_shd);
 		} else {
 			Utils::playSound(a_parrier, _parrySound_wpn);
 		}
 	}
-	if (Settings::bEnableParrySparkEffect) {
+	if (Milf::bEnableParrySparkEffect) {
 		blockSpark::playBlockSpark(a_parrier);
 	}
 	if (a_parrier->IsPlayerRef()) {
-		if (Settings::bEnableSlowTimeEffect) {
+		if (Milf::bEnableSlowTimeEffect) {
 			Utils::slowTime(0.2f, 0.3f);
 		}
-		if (Settings::bEnableScreenShakeEffect) {
+		if (Milf::bEnableScreenShakeEffect) {
 			inlineUtils::shakeCamera(1.5, a_parrier->GetPosition(), 0.4f);
 		}
 	}
@@ -261,17 +261,17 @@ void EldenParry::negateParryCost(RE::Actor* a_actor) {
 }
 
 void EldenParry::playGuardBashEffects(RE::Actor* a_actor) {
-	if (Settings::bEnableParrySoundEffect) {
+	if (Milf::bEnableParrySoundEffect) {
 			Utils::playSound(a_actor, _parrySound_shd);
 	}
-	if (Settings::bEnableParrySparkEffect) {
+	if (Milf::bEnableParrySparkEffect) {
 		blockSpark::playBlockSpark(a_actor);
 	}
 	if (a_actor->IsPlayerRef()) {
-		if (Settings::bEnableSlowTimeEffect) {
+		if (Milf::bEnableSlowTimeEffect) {
 			Utils::slowTime(0.2f, 0.3f);
 		}
-		if (Settings::bEnableScreenShakeEffect) {
+		if (Milf::bEnableScreenShakeEffect) {
 			inlineUtils::shakeCamera(1.5, a_actor->GetPosition(), 0.4f);
 		}
 	}
@@ -331,7 +331,7 @@ const RE::TESObjectWEAP *const EldenParry::GetAttackWeapon(RE::AIProcess *const 
 }
 
 double EldenParry::GetScore(RE::Actor *actor, const RE::TESObjectWEAP *weapon,
-							RE::AIProcess *const actorAI, const Settings::Scores &scoreSettings)
+							RE::AIProcess *const actorAI, const Milf::Scores &scoreSettings)
 {
 	double score = 0.0;
 
@@ -479,15 +479,114 @@ bool EldenParry::AttackerBeatsParry(RE::Actor *attacker, RE::Actor *target, cons
 									RE::AIProcess *const targetAI)
 {
 
-	if (!Settings::GetSingleton()->core.useScoreSystem)
+	if (!Milf::GetSingleton()->core.useScoreSystem)
 	{
 		// The score-based system has been disabled in INI, so attackers can never overpower parries
 		return false;
 	}
 
-	const double attackerScore = GetScore(attacker, attackerWeapon, attackerAI, Settings::GetSingleton()->scores);
-	const double targetScore = GetScore(target, targetWeapon, targetAI, Settings::GetSingleton()->scores);
+	const double attackerScore = GetScore(attacker, attackerWeapon, attackerAI, Milf::GetSingleton()->scores);
+	const double targetScore = GetScore(target, targetWeapon, targetAI, Milf::GetSingleton()->scores);
 	riposteScore = (targetScore - attackerScore);
 
-	return ((attackerScore - targetScore) >= Settings::GetSingleton()->scores.scoreDiffThreshold);
+	return ((attackerScore - targetScore) >= Milf::GetSingleton()->scores.scoreDiffThreshold);
+}
+
+
+Milf *Milf::GetSingleton()
+{
+	static Milf singleton;
+	return std::addressof(singleton);
+}
+
+void Milf::Load()
+{
+	constexpr auto path = L"Data/SKSE/Plugins/ParryingRPG.ini";
+
+	CSimpleIniA ini;
+	ini.SetUnicode();
+
+	ini.LoadFile(path);
+
+	core.Load(ini);
+	scores.Load(ini);
+
+	ini.SaveFile(path);
+}
+
+void Milf::Core::Load(CSimpleIniA &a_ini)
+{
+	static const char *section = "Core";
+
+	detail::get_value(a_ini, useScoreSystem, section, "UseScoreSystem",
+					  ";Use the score-based system to allow certain attacks to go through and ignore parries.");
+}
+
+void Milf::Scores::Load(CSimpleIniA &a_ini)
+{
+	static const char *section = "Scores";
+
+	detail::get_value(a_ini, scoreDiffThreshold, section, "ScoreDiffThreshold",
+					  ";If the difference in scores is at least equal to this threshold, attacks are not parried.");
+
+	detail::get_value(a_ini, weaponSkillWeight, section, "WeaponSkillWeight",
+					  ";Weapon Skill is multiplied by this weight and then added to the score.");
+
+	detail::get_value(a_ini, oneHandDaggerScore, section, "OneHandDaggerScore",
+					  ";Bonus score for attacks with daggers.");
+	detail::get_value(a_ini, oneHandSwordScore, section, "OneHandSwordScore",
+					  ";Bonus score for attacks with one-handed swords.");
+	detail::get_value(a_ini, oneHandAxeScore, section, "OneHandAxeScore",
+					  ";Bonus score for attacks with one-handed axes.");
+	detail::get_value(a_ini, oneHandMaceScore, section, "OneHandMaceScore",
+					  ";Bonus score for attacks with one-handed maces.");
+	detail::get_value(a_ini, oneHandKatanaScore, section, "OneHandKatanaScore",
+					  ";Bonus score for attacks with katanas (from Animated Armoury).");
+	detail::get_value(a_ini, oneHandRapierScore, section, "OneHandRapierScore",
+					  ";Bonus score for attacks with rapiers (from Animated Armoury).");
+	detail::get_value(a_ini, oneHandClawsScore, section, "OneHandClawsScore",
+					  ";Bonus score for attacks with claws (from Animated Armoury).");
+	detail::get_value(a_ini, oneHandWhipScore, section, "OneHandWhipScore",
+					  ";Bonus score for attacks with whips (from Animated Armoury).");
+	detail::get_value(a_ini, twoHandSwordScore, section, "TwoHandSwordScore",
+					  ";Bonus score for attacks with two-handed swords.");
+	detail::get_value(a_ini, twoHandAxeScore, section, "TwoHandAxeScore",
+					  ";Bonus score for attacks with two-handed axes.");
+	detail::get_value(a_ini, twoHandWarhammerScore, section, "TwoHandWarhammerScore",
+					  ";Bonus score for attacks with two-handed warhammers.");
+	detail::get_value(a_ini, twoHandPikeScore, section, "TwoHandPikeScore",
+					  ";Bonus score for attacks with two-handed pikes (from Animated Armoury).");
+	detail::get_value(a_ini, twoHandHalberdScore, section, "TwoHandHalberdScore",
+					  ";Bonus score for attacks with two-handed halberds (from Animated Armoury).");
+	detail::get_value(a_ini, twoHandQuarterstaffScore, section, "TwoHandQuarterstaffScore",
+					  ";Bonus score for attacks with two-handed quarterstaffs (from Animated Armoury).");
+
+	detail::get_value(a_ini, altmerScore, section, "AltmerScore",
+					  ";Bonus score for Altmer.");
+	detail::get_value(a_ini, argonianScore, section, "ArgonianScore",
+					  ";Bonus score for Argonians.");
+	detail::get_value(a_ini, bosmerScore, section, "BosmerScore",
+					  ";Bonus score for Bosmer.");
+	detail::get_value(a_ini, bretonScore, section, "BretonScore",
+					  ";Bonus score for Bretons.");
+	detail::get_value(a_ini, dunmerScore, section, "DunmerScore",
+					  ";Bonus score for Dunmer.");
+	detail::get_value(a_ini, imperialScore, section, "ImperialScore",
+					  ";Bonus score for Imperials.");
+	detail::get_value(a_ini, khajiitScore, section, "KhajiitScore",
+					  ";Bonus score for Khajiit.");
+	detail::get_value(a_ini, nordScore, section, "NordScore",
+					  ";Bonus score for Nords.");
+	detail::get_value(a_ini, orcScore, section, "OrcScore",
+					  ";Bonus score for Orcs.");
+	detail::get_value(a_ini, redguardScore, section, "RedguardScore",
+					  ";Bonus score for Redguard.");
+
+	detail::get_value(a_ini, femaleScore, section, "FemaleScore",
+					  ";Bonus score for female characters.");
+
+	detail::get_value(a_ini, powerAttackScore, section, "PowerAttackScore",
+					  ";Bonus score for power attacks.");
+
+	detail::get_value(a_ini, playerScore, section, "PlayerScore", ";Bonus score for the Player.");
 }
