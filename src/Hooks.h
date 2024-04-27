@@ -5,7 +5,6 @@
 #include "Utils.hpp"
 namespace Hooks
 {
-
 	class Hook_getAttackStaminaCost  //Actor__sub_140627930+16E	call ActorValueOwner__sub_1403BEC90
 	{
 		/*to cancel out vanilla power attack stamina consumption.*/
@@ -63,10 +62,7 @@ namespace Hooks
 				
 			} else if (a_victim->AsActorState()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
 				if (a_victim->IsPlayerRef() || Settings::bEnableNPCParry) {
-					bool isDefenderShieldEquipped = Utils::isEquippedShield(a_victim);
-					if ((isDefenderShieldEquipped && Settings::bEnableShieldParry) || Settings::bEnableWeaponParry) {
-						return EldenParry::GetSingleton()->processMeleeParry(a_aggressor, a_victim);
-					}
+					return EldenParry::GetSingleton()->processMeleeParry(a_aggressor, a_victim);
 				}
 			}
 			return false;

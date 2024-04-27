@@ -109,7 +109,34 @@ bool EldenParry::inParryState(RE::Actor* a_actor)
 	return false;
 }
 
-bool EldenParry::canParry(RE::Actor* a_parrier, RE::TESObjectREFR* a_obj)
+bool EldenParry::ParryContext(RE::Actor* a_aggressor, RE::Actor* a_victim)
+{
+	bool isDefenderShieldEquipped = Utils::isEquippedShield(a_victim);
+	if ((isDefenderShieldEquipped && Settings::bEnableShieldParry))
+	{
+		return true;
+
+	} else if (Settings::bEnableWeaponParry)
+	{
+		RE::AIProcess *const attackerAI = a_aggressor->GetActorRuntimeData().currentProcess;
+		RE::AIProcess *const targetAI = a_victim->GetActorRuntimeData().currentProcess;
+		auto attackerWeapon = GetAttackWeapon(attackerAI);
+		auto targetWeapon = GetAttackWeapon(targetAI);
+		if (!AttackerBeatsParry(a_aggressor, a_victim, attackerWeapon, targetWeapon, attackerAI, targetAI))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool EldenParry::canParry(RE::Actor* a_parrier, RE::TESObjectREFR* a_obj, RE::Actor* a_attacker)
+{
+	logger::info("{}",a_parrier->GetName());
+	return inParryState(a_parrier) && ParryContext(a_attacker, a_parrier) && inBlockAngle(a_parrier, a_obj);
+}
+
+bool EldenParry::canParryProj(RE::Actor* a_parrier, RE::TESObjectREFR* a_obj)
 {
 	logger::info("{}",a_parrier->GetName());
 	return inParryState(a_parrier) && inBlockAngle(a_parrier, a_obj);
@@ -118,7 +145,7 @@ bool EldenParry::canParry(RE::Actor* a_parrier, RE::TESObjectREFR* a_obj)
 
 bool EldenParry::processMeleeParry(RE::Actor* a_attacker, RE::Actor* a_parrier)
 {
-	if (canParry(a_parrier, a_attacker)) {
+	if (canParry(a_parrier, a_attacker, a_attacker)) {
 		playParryEffects(a_parrier);
 		Utils::triggerStagger(a_parrier, a_attacker, 10);
 		if (Settings::facts::isValhallaCombatAPIObtained) {
@@ -148,7 +175,7 @@ bool EldenParry::processMeleeParry(RE::Actor* a_attacker, RE::Actor* a_parrier)
 /// <returns>True if the projectile parry is successful.</returns>
 bool EldenParry::processProjectileParry(RE::Actor* a_parrier, RE::Projectile* a_projectile, RE::hkpCollidable* a_projectile_collidable)
 {
-	if (canParry(a_parrier, a_projectile)) {
+	if (canParryProj(a_parrier, a_projectile)) {
 		RE::TESObjectREFR* shooter = nullptr;
 		if (a_projectile->GetProjectileRuntimeData().shooter && a_projectile->GetProjectileRuntimeData().shooter.get()) {
 			shooter = a_projectile->GetProjectileRuntimeData().shooter.get().get();
@@ -285,3 +312,182 @@ PRECISION_API::PreHitCallbackReturn EldenParry::precisionPrehitCallbackFunc(cons
 	return returnData;
 }
 
+const RE::TESObjectWEAP *const EldenParry::GetAttackWeapon(RE::AIProcess *const aiProcess)
+{
+	if (aiProcess && aiProcess->high && aiProcess->high->attackData &&
+		!aiProcess->high->attackData->data.flags.all(RE::AttackData::AttackFlag::kBashAttack))
+	{
+
+		const RE::TESForm *equipped = aiProcess->high->attackData->IsLeftAttack() ? aiProcess->GetEquippedLeftHand()
+																				  : aiProcess->GetEquippedRightHand();
+
+		if (equipped)
+		{
+			return equipped->As<RE::TESObjectWEAP>();
+		}
+	}
+
+	return nullptr;
+}
+
+double EldenParry::GetScore(RE::Actor *actor, const RE::TESObjectWEAP *weapon,
+							RE::AIProcess *const actorAI, const Settings::Scores &scoreSettings)
+{
+	double score = 0.0;
+
+	// Need to check for Animated Armoury keywords first, because its weapons
+	// ALSO have some of the vanilla weapon type keywords (but we want the AA
+	// ones to take precedence).
+	if (weapon->HasKeywordString("WeapTypeQtrStaff"))
+	{
+		score += scoreSettings.twoHandQuarterstaffScore;
+	}
+	else if (weapon->HasKeywordString("WeapTypeHalberd"))
+	{
+		score += scoreSettings.twoHandHalberdScore;
+	}
+	else if (weapon->HasKeywordString("WeapTypePike"))
+	{
+		score += scoreSettings.twoHandPikeScore;
+	}
+	else if (weapon->HasKeywordString("WeapTypeKatana"))
+	{
+		score += scoreSettings.oneHandKatanaScore;
+	}
+	else if (weapon->HasKeywordString("WeapTypeRapier"))
+	{
+		score += scoreSettings.oneHandRapierScore;
+	}
+	else if (weapon->HasKeywordString("WeapTypeClaw"))
+	{
+		score += scoreSettings.oneHandClawsScore;
+	}
+	else if (weapon->HasKeywordString("WeapTypeWhip"))
+	{
+		score += scoreSettings.oneHandWhipScore;
+	}
+	else if (weapon->HasKeywordString("WeapTypeWarhammer"))
+	{
+		score += scoreSettings.twoHandWarhammerScore;
+	}
+	else if (weapon->HasKeywordString("WeapTypeBattleaxe"))
+	{
+		score += scoreSettings.twoHandAxeScore;
+	}
+	else if (weapon->HasKeywordString("WeapTypeGreatsword"))
+	{
+		score += scoreSettings.twoHandSwordScore;
+	}
+	else if (weapon->HasKeywordString("WeapTypeMace"))
+	{
+		score += scoreSettings.oneHandMaceScore;
+	}
+	else if (weapon->HasKeywordString("WeapTypeWarAxe"))
+	{
+		score += scoreSettings.oneHandAxeScore;
+	}
+	else if (weapon->HasKeywordString("WeapTypeSword"))
+	{
+		score += scoreSettings.oneHandSwordScore;
+	}
+	else if (weapon->HasKeywordString("WeapTypeDagger"))
+	{
+		score += scoreSettings.oneHandDaggerScore;
+	}
+
+	const auto actorValue = weapon->weaponData.skill.get();
+	switch (actorValue)
+	{
+	case RE::ActorValue::kOneHanded:
+		score += (scoreSettings.weaponSkillWeight *
+				  actor->AsActorValueOwner()->GetActorValue(RE::ActorValue::kOneHanded));
+		break;
+	case RE::ActorValue::kTwoHanded:
+		score += (scoreSettings.weaponSkillWeight *
+				  actor->AsActorValueOwner()->GetActorValue(RE::ActorValue::kTwoHanded));
+		break;
+	default:
+		// Do nothing
+		break;
+	}
+
+	const auto race = actor->GetRace();
+	const auto raceFormID = race->formID;
+
+	if (raceFormID == 0x13743 || raceFormID == 0x88840)
+	{
+		score += scoreSettings.altmerScore;
+	}
+	else if (raceFormID == 0x13740 || raceFormID == 0x8883A)
+	{
+		score += scoreSettings.argonianScore;
+	}
+	else if (raceFormID == 0x13749 || raceFormID == 0x88884)
+	{
+		score += scoreSettings.bosmerScore;
+	}
+	else if (raceFormID == 0x13741 || raceFormID == 0x8883C)
+	{
+		score += scoreSettings.bretonScore;
+	}
+	else if (raceFormID == 0x13742 || raceFormID == 0x8883D)
+	{
+		score += scoreSettings.dunmerScore;
+	}
+	else if (raceFormID == 0x13744 || raceFormID == 0x88844)
+	{
+		score += scoreSettings.imperialScore;
+	}
+	else if (raceFormID == 0x13745 || raceFormID == 0x88845)
+	{
+		score += scoreSettings.khajiitScore;
+	}
+	else if (raceFormID == 0x13746 || raceFormID == 0x88794)
+	{
+		score += scoreSettings.nordScore;
+	}
+	else if (raceFormID == 0x13747 || raceFormID == 0xA82B9)
+	{
+		score += scoreSettings.orcScore;
+	}
+	else if (raceFormID == 0x13748 || raceFormID == 0x88846)
+	{
+		score += scoreSettings.redguardScore;
+	}
+
+	const auto actorBase = actor->GetActorBase();
+	if (actorBase && actorBase->IsFemale())
+	{
+		score += scoreSettings.femaleScore;
+	}
+
+	if (actorAI->high->attackData->data.flags.any(RE::AttackData::AttackFlag::kPowerAttack))
+	{
+		score += scoreSettings.powerAttackScore;
+	}
+
+	if (actor->IsPlayerRef())
+	{
+		score += scoreSettings.playerScore;
+	}
+
+	return score;
+}
+
+bool EldenParry::AttackerBeatsParry(RE::Actor *attacker, RE::Actor *target, const RE::TESObjectWEAP *attackerWeapon,
+									const RE::TESObjectWEAP *targetWeapon, RE::AIProcess *const attackerAI,
+									RE::AIProcess *const targetAI)
+{
+
+	if (!Settings::GetSingleton()->core.useScoreSystem)
+	{
+		// The score-based system has been disabled in INI, so attackers can never overpower parries
+		return false;
+	}
+
+	const double attackerScore = GetScore(attacker, attackerWeapon, attackerAI, Settings::GetSingleton()->scores);
+	const double targetScore = GetScore(target, targetWeapon, targetAI, Settings::GetSingleton()->scores);
+	riposteScore = (targetScore - attackerScore);
+
+	return ((attackerScore - targetScore) >= Settings::GetSingleton()->scores.scoreDiffThreshold);
+}

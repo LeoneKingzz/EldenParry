@@ -50,8 +50,7 @@ private:
 	static inline const RE::BSFixedString bleedOutGraphBool = "IsBleedingOut";
 
 	static inline const RE::BSFixedString recoilLargeStart = "recoilLargeStart";
-
-
+	static inline const RE::BSFixedString recoilStart = "recoilStart";
 
 	static inline bool ApproximatelyEqual(float A, float B)
 	{
@@ -161,11 +160,18 @@ private:
 public:
 	static void triggerStagger(RE::Actor* a_aggressor, RE::Actor* a_reactor, float a_reactionMagnitude)
 	{
-		auto headingAngle = a_reactor->GetHeadingAngle(a_aggressor->GetPosition(), false);
-		auto direction = (headingAngle >= 0.0f) ? headingAngle / 360.0f : (360.0f + headingAngle) / 360.0f;
-		a_reactor->SetGraphVariableFloat(staggerDirection, direction);
-		a_reactor->SetGraphVariableFloat(StaggerMagnitude, a_reactionMagnitude);
-		a_reactor->NotifyAnimationGraph(staggerStart);
+		bool isDefenderShieldEquipped = Utils::isEquippedShield(a_aggressor);
+		if ((isDefenderShieldEquipped && Settings::bEnableShieldParry)) {
+			a_reactor->NotifyAnimationGraph(recoilLargeStart);
+			return;
+	    } else if (Settings::bEnableWeaponParry) {
+			if (EldenParry::riposteScore >= 10.0) {
+				a_reactor->NotifyAnimationGraph(recoilLargeStart);
+				return;
+			} else {
+				a_reactor->NotifyAnimationGraph(recoilStart);
+			}	
+		}
 	};
 
 	static bool isEquippedShield(RE::Actor* a_actor)

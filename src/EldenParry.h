@@ -10,6 +10,15 @@
 class EldenParry
 {
 public:
+	bool AttackerBeatsParry(RE::Actor *attacker, RE::Actor *target, const RE::TESObjectWEAP *attackerWeapon,
+							const RE::TESObjectWEAP *targetWeapon, RE::AIProcess *const attackerAI,
+							RE::AIProcess *const targetAI);
+	double GetScore(RE::Actor *actor, const RE::TESObjectWEAP *weapon,
+					RE::AIProcess *const actorAI, const Settings::Scores &scoreSettings);
+	const RE::TESObjectWEAP *const GetAttackWeapon(RE::AIProcess *const aiProcess);
+
+	static double riposteScore;
+
 	static EldenParry* GetSingleton() {
 		static EldenParry singleton;
 		return std::addressof(singleton);
@@ -50,8 +59,10 @@ private:
 	void playParryEffects(RE::Actor* a_parrier);
 
 	bool inParryState(RE::Actor* a_parrier);
-	bool canParry(RE::Actor* a_parrier, RE::TESObjectREFR* a_obj);
+	bool canParry(RE::Actor* a_parrier, RE::TESObjectREFR* a_obj, RE::Actor* a_attacker);
+	bool canParryProj(RE::Actor* a_parrier, RE::TESObjectREFR* a_obj);
 	bool inBlockAngle(RE::Actor* a_blocker, RE::TESObjectREFR* a_obj);
+	bool ParryContext(RE::Actor* a_agressor, RE::Actor* a_victim);
 	static PRECISION_API::PreHitCallbackReturn precisionPrehitCallbackFunc(const PRECISION_API::PrecisionHitData& a_precisionHitData);
 
 	std::unordered_map<RE::Actor*, float> _parryCostQueue;
