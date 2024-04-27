@@ -9,6 +9,7 @@
 
 class EldenParry
 {
+	friend class Milf;
 public:
 	bool AttackerBeatsParry(RE::Actor *attacker, RE::Actor *target, const RE::TESObjectWEAP *attackerWeapon,
 							const RE::TESObjectWEAP *targetWeapon, RE::AIProcess *const attackerAI,
