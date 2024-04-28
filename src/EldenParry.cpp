@@ -262,6 +262,7 @@ double EldenParry::applyRiposteScore(RE::Actor* a_actor) {
 		_riposteScoreQueue.erase(a_actor);
 		return a_costt;
 	}
+	return 0.0;
 }
 
 void EldenParry::cacheRiposteScore(RE::Actor* a_actor, double a_cost) {
@@ -346,7 +347,7 @@ const RE::TESObjectWEAP *const EldenParry::GetAttackWeapon(RE::AIProcess *const 
 	return nullptr;
 }
 
-double GetScore(RE::Actor *actor, const RE::TESObjectWEAP *weapon, RE::AIProcess *const actorAI, const Milf::Scores &scoreSettings)
+double EldenParry::GetScore(RE::Actor *actor, const RE::TESObjectWEAP *weapon, RE::AIProcess *const actorAI, const Milf::Scores &scoreSettings)
 {
 	double score = 0.0;
 
