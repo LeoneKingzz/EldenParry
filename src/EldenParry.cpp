@@ -2,8 +2,10 @@
 #include "Settings.h"
 #include "Utils.hpp"
 #include <SKSE/SKSE.h>
+#include "RE/B/BGSKeywordForm.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
+using namespace std;
 using uniqueLocker = std::unique_lock<std::shared_mutex>;
 using sharedLocker = std::shared_lock<std::shared_mutex>;
 
