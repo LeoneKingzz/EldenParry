@@ -1,11 +1,6 @@
 #include "EldenParry.h"
 #include "Settings.h"
 #include "Utils.hpp"
-#include <SKSE/SKSE.h>
-#include "RE/B/BGSKeywordForm.h"
-#define _USE_MATH_DEFINES
-#include <math.h>
-using namespace std;
 using uniqueLocker = std::unique_lock<std::shared_mutex>;
 using sharedLocker = std::shared_lock<std::shared_mutex>;
 
@@ -359,62 +354,62 @@ double EldenParry::GetScore(RE::Actor *actor, const RE::TESObjectWEAP *weapon, R
 	// Need to check for Animated Armoury keywords first, because its weapons
 	// ALSO have some of the vanilla weapon type keywords (but we want the AA
 	// ones to take precedence).
-	if (weapon->HasKeywordString("WeapTypeQtrStaff"))
-	{
-		score += scoreSettings.twoHandQuarterstaffScore;
-	}
-	else if (weapon->HasKeywordString("WeapTypeHalberd"))
-	{
-		score += scoreSettings.twoHandHalberdScore;
-	}
-	else if (weapon->HasKeywordString("WeapTypePike"))
-	{
-		score += scoreSettings.twoHandPikeScore;
-	}
-	else if (weapon->HasKeywordString("WeapTypeKatana"))
-	{
-		score += scoreSettings.oneHandKatanaScore;
-	}
-	else if (weapon->HasKeywordString("WeapTypeRapier"))
-	{
-		score += scoreSettings.oneHandRapierScore;
-	}
-	else if (weapon->HasKeywordString("WeapTypeClaw"))
-	{
-		score += scoreSettings.oneHandClawsScore;
-	}
-	else if (weapon->HasKeywordString("WeapTypeWhip"))
-	{
-		score += scoreSettings.oneHandWhipScore;
-	}
-	else if (weapon->HasKeywordString("WeapTypeWarhammer"))
-	{
-		score += scoreSettings.twoHandWarhammerScore;
-	}
-	else if (weapon->HasKeywordString("WeapTypeBattleaxe"))
-	{
-		score += scoreSettings.twoHandAxeScore;
-	}
-	else if (weapon->HasKeywordString("WeapTypeGreatsword"))
-	{
-		score += scoreSettings.twoHandSwordScore;
-	}
-	else if (weapon->HasKeywordString("WeapTypeMace"))
-	{
-		score += scoreSettings.oneHandMaceScore;
-	}
-	else if (weapon->HasKeywordString("WeapTypeWarAxe"))
-	{
-		score += scoreSettings.oneHandAxeScore;
-	}
-	else if (weapon->HasKeywordString("WeapTypeSword"))
-	{
-		score += scoreSettings.oneHandSwordScore;
-	}
-	else if (weapon->HasKeywordString("WeapTypeDagger"))
-	{
-		score += scoreSettings.oneHandDaggerScore;
-	}
+	// if (weapon->HasKeywordString("WeapTypeQtrStaff"))
+	// {
+	// 	score += scoreSettings.twoHandQuarterstaffScore;
+	// }
+	// else if (weapon->HasKeywordString("WeapTypeHalberd"))
+	// {
+	// 	score += scoreSettings.twoHandHalberdScore;
+	// }
+	// else if (weapon->HasKeywordString("WeapTypePike"))
+	// {
+	// 	score += scoreSettings.twoHandPikeScore;
+	// }
+	// else if (weapon->HasKeywordString("WeapTypeKatana"))
+	// {
+	// 	score += scoreSettings.oneHandKatanaScore;
+	// }
+	// else if (weapon->HasKeywordString("WeapTypeRapier"))
+	// {
+	// 	score += scoreSettings.oneHandRapierScore;
+	// }
+	// else if (weapon->HasKeywordString("WeapTypeClaw"))
+	// {
+	// 	score += scoreSettings.oneHandClawsScore;
+	// }
+	// else if (weapon->HasKeywordString("WeapTypeWhip"))
+	// {
+	// 	score += scoreSettings.oneHandWhipScore;
+	// }
+	// else if (weapon->HasKeywordString("WeapTypeWarhammer"))
+	// {
+	// 	score += scoreSettings.twoHandWarhammerScore;
+	// }
+	// else if (weapon->HasKeywordString("WeapTypeBattleaxe"))
+	// {
+	// 	score += scoreSettings.twoHandAxeScore;
+	// }
+	// else if (weapon->HasKeywordString("WeapTypeGreatsword"))
+	// {
+	// 	score += scoreSettings.twoHandSwordScore;
+	// }
+	// else if (weapon->HasKeywordString("WeapTypeMace"))
+	// {
+	// 	score += scoreSettings.oneHandMaceScore;
+	// }
+	// else if (weapon->HasKeywordString("WeapTypeWarAxe"))
+	// {
+	// 	score += scoreSettings.oneHandAxeScore;
+	// }
+	// else if (weapon->HasKeywordString("WeapTypeSword"))
+	// {
+	// 	score += scoreSettings.oneHandSwordScore;
+	// }
+	// else if (weapon->HasKeywordString("WeapTypeDagger"))
+	// {
+	// 	score += scoreSettings.oneHandDaggerScore;
+	// }
 
 	const auto actorValue = weapon->weaponData.skill.get();
 	switch (actorValue)
