@@ -1,6 +1,9 @@
 #include "EldenParry.h"
 #include "Settings.h"
 #include "Utils.hpp"
+#include <SKSE/SKSE.h>
+#define _USE_MATH_DEFINES
+#include <math.h>
 using uniqueLocker = std::unique_lock<std::shared_mutex>;
 using sharedLocker = std::shared_lock<std::shared_mutex>;
 
@@ -524,7 +527,7 @@ Milf *Milf::GetSingleton()
 
 void Milf::Load()
 {
-	constexpr auto path = L"Data/SKSE/Plugins/ParryingRPG.ini";
+	constexpr auto path = "Data\\SKSE\\Plugins\\EldenRiposteSystem.ini";
 
 	CSimpleIniA ini;
 	ini.SetUnicode();
