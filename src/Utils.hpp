@@ -158,14 +158,20 @@ private:
 
 
 public:
-	static void triggerStagger(RE::Actor* a_aggressor, RE::Actor* a_reactor)
+
+	static void triggerStagger(RE::Actor* a_aggressor, RE::Actor* a_reactor, double a_reprisal)
 	{
 		bool isDefenderShieldEquipped = Utils::isEquippedShield(a_aggressor);
 		if ((isDefenderShieldEquipped && Settings::bEnableShieldParry)) {
-			a_reactor->NotifyAnimationGraph(recoilLargeStart);
-			return;
+			if (a_reprisal >= 5.0) {
+				a_reactor->NotifyAnimationGraph(recoilLargeStart);
+				return;
+			} else {
+				a_reactor->NotifyAnimationGraph(recoilStart);
+				return;
+			}
 	    } else if (Settings::bEnableWeaponParry) {
-			if (EldenParry::riposteScore >= 10.0) {
+			if (a_reprisal >= 10.0) {
 				a_reactor->NotifyAnimationGraph(recoilLargeStart);
 				return;
 			} else {

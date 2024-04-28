@@ -147,7 +147,7 @@ bool EldenParry::processMeleeParry(RE::Actor* a_attacker, RE::Actor* a_parrier)
 {
 	if (canParry(a_parrier, a_attacker, a_attacker)) {
 		playParryEffects(a_parrier);
-		Utils::triggerStagger(a_parrier, a_attacker);
+		Utils::triggerStagger(a_parrier, a_attacker, (applyRiposteScore(a_parrier)));
 		if (Settings::facts::isValhallaCombatAPIObtained) {
 			_ValhallaCombat_API->processStunDamage(VAL_API::STUNSOURCE::parry, nullptr, a_parrier, a_attacker, 0);
 		}
@@ -208,7 +208,7 @@ void EldenParry::processGuardBash(RE::Actor* a_basher, RE::Actor* a_blocker)
 	if (!a_blocker->IsBlocking() || !inBlockAngle(a_blocker, a_basher) || a_blocker->AsActorState()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
 		return;
 	}
-	Utils::triggerStagger(a_basher, a_blocker);
+	Utils::triggerStagger(a_basher, a_blocker, applyRiposteScore(a_basher));
 	playGuardBashEffects(a_basher);
 	RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Settings::fGuardBashExp);
 }
@@ -252,6 +252,22 @@ void EldenParry::cacheParryCost(RE::Actor* a_actor, float a_cost) {
 	//logger::logger::info("cache parry cost for {}: {}", a_actor->GetName(), a_cost);
 	std::lock_guard<std::shared_mutex> lock(mtx_parryCostQueue);
 	_parryCostQueue[a_actor] = a_cost;
+}
+
+double EldenParry::applyRiposteScore(RE::Actor* a_actor) {
+
+	std::lock_guard<std::shared_mutex> lock(mtx_riposteScoreQueue);
+	if (_riposteScoreQueue.contains(a_actor)) {
+        double a_costt = _riposteScoreQueue[a_actor];
+		_riposteScoreQueue.erase(a_actor);
+		return a_costt;
+	}
+}
+
+void EldenParry::cacheRiposteScore(RE::Actor* a_actor, double a_cost) {
+	//logger::logger::info("cache parry cost for {}: {}", a_actor->GetName(), a_cost);
+	std::lock_guard<std::shared_mutex> lock(mtx_riposteScoreQueue);
+	_riposteScoreQueue[a_actor] = a_cost;
 }
 
 void EldenParry::negateParryCost(RE::Actor* a_actor) {
@@ -473,6 +489,9 @@ double GetScore(RE::Actor *actor, const RE::TESObjectWEAP *weapon, RE::AIProcess
 	return score;
 }
 
+
+
+
 bool EldenParry::AttackerBeatsParry(RE::Actor *attacker, RE::Actor *target, const RE::TESObjectWEAP *attackerWeapon,
 									const RE::TESObjectWEAP *targetWeapon, RE::AIProcess *const attackerAI,
 									RE::AIProcess *const targetAI)
@@ -486,7 +505,11 @@ bool EldenParry::AttackerBeatsParry(RE::Actor *attacker, RE::Actor *target, cons
 
 	const double attackerScore = GetScore(attacker, attackerWeapon, attackerAI, Milf::GetSingleton()->scores);
 	const double targetScore = GetScore(target, targetWeapon, targetAI, Milf::GetSingleton()->scores);
-	riposteScore = (targetScore - attackerScore);
+
+	double reprisal = (targetScore - attackerScore);
+
+	EldenParry::GetSingleton()->cacheRiposteScore(target, reprisal);
+
 
 	return ((attackerScore - targetScore) >= Milf::GetSingleton()->scores.scoreDiffThreshold);
 }

@@ -11,6 +11,7 @@ using std::string;
 class Milf
 {
 public:
+
 	[[nodiscard]] static Milf *GetSingleton();
 
 	void Load();
@@ -128,8 +129,6 @@ public:
 
 	const RE::TESObjectWEAP *const GetAttackWeapon(RE::AIProcess *const aiProcess);
 
-	static double riposteScore;
-
 	static EldenParry *GetSingleton()
 	{
 		static EldenParry singleton;
@@ -155,6 +154,11 @@ public:
 
 	void applyParryCost(RE::Actor *a_actor);
 	void cacheParryCost(RE::Actor *a_actor, float a_cost);
+
+	double applyRiposteScore(RE::Actor* a_actor);
+
+	void cacheRiposteScore(RE::Actor* a_actor, double a_cost);
+
 	void negateParryCost(RE::Actor *a_actor);
 
 	void playGuardBashEffects(RE::Actor *a_actor);
@@ -181,12 +185,17 @@ private:
 	std::unordered_set<RE::Actor *> _parrySuccessActors;
 	std::unordered_map<RE::Actor *, float> _parryTimer;
 
+	std::unordered_map<RE::Actor *, double> _riposteScoreQueue;
+
 	RE::BGSSoundDescriptorForm *_parrySound_shd;
 	RE::BGSSoundDescriptorForm *_parrySound_wpn;
 	float _GMST_fCombatHitConeAngle;
 	float _parryAngle;
 
 	std::shared_mutex mtx_parryCostQueue;
+
+	std::shared_mutex mtx_riposteScoreQueue;
+
 	std::shared_mutex mtx_parrySuccessActors;
 	std::shared_mutex mtx_parryTimer;
 
