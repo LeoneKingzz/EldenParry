@@ -307,7 +307,7 @@ double EldenParry::GetScore(RE::Actor *actor, const Milf::Scores &scoreSettings)
 {
 	double score = 0.0;
 
-	RE::TESObjectWEAP* weapon;
+	RE::TESObjectWEAP* weapon = nullptr
 
 	bool WeaponShield = false;
 
