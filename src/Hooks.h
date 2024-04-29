@@ -62,7 +62,10 @@ namespace Hooks
 				
 			} else if (a_victim->AsActorState()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
 				if (a_victim->IsPlayerRef() || Settings::bEnableNPCParry) {
-					return EldenParry::GetSingleton()->processMeleeParry(a_aggressor, a_victim);
+					bool isDefenderShieldEquipped = Utils::isEquippedShield(a_victim);
+					if ((isDefenderShieldEquipped && Settings::bEnableShieldParry) || Settings::bEnableWeaponParry) {
+						return EldenParry::GetSingleton()->processMeleeParry(a_aggressor, a_victim);
+					}
 				}
 			}
 			return false;

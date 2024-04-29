@@ -109,30 +109,7 @@ bool EldenParry::inParryState(RE::Actor* a_actor)
 	return false;
 }
 
-bool EldenParry::ParryContext(RE::Actor* a_aggressor, RE::Actor* a_victim)
-{
-	bool isDefenderShieldEquipped = Utils::isEquippedShield(a_victim);
-	if ((isDefenderShieldEquipped && Settings::bEnableShieldParry))
-	{
-		return true;
-
-	} else if (Settings::bEnableWeaponParry)
-	{
-		if (!AttackerBeatsParry(a_aggressor, a_victim,))
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-bool EldenParry::canParry(RE::Actor* a_parrier, RE::TESObjectREFR* a_obj, RE::Actor* a_attacker)
-{
-	logger::info("{}",a_parrier->GetName());
-	return inParryState(a_parrier) && ParryContext(a_attacker, a_parrier) && inBlockAngle(a_parrier, a_obj);
-}
-
-bool EldenParry::canParryProj(RE::Actor* a_parrier, RE::TESObjectREFR* a_obj)
+bool EldenParry::canParry(RE::Actor* a_parrier, RE::TESObjectREFR* a_obj)
 {
 	logger::info("{}",a_parrier->GetName());
 	return inParryState(a_parrier) && inBlockAngle(a_parrier, a_obj);
@@ -141,9 +118,9 @@ bool EldenParry::canParryProj(RE::Actor* a_parrier, RE::TESObjectREFR* a_obj)
 
 bool EldenParry::processMeleeParry(RE::Actor* a_attacker, RE::Actor* a_parrier)
 {
-	if (canParry(a_parrier, a_attacker, a_attacker)) {
+	if (canParry(a_parrier, a_attacker)) {
 		playParryEffects(a_parrier);
-		Utils::triggerStagger(a_parrier, a_attacker, (applyRiposteScore(a_parrier)));
+		Utils::triggerStagger(a_parrier, a_attacker);
 		if (Settings::facts::isValhallaCombatAPIObtained) {
 			_ValhallaCombat_API->processStunDamage(VAL_API::STUNSOURCE::parry, nullptr, a_parrier, a_attacker, 0);
 		}
@@ -171,7 +148,7 @@ bool EldenParry::processMeleeParry(RE::Actor* a_attacker, RE::Actor* a_parrier)
 /// <returns>True if the projectile parry is successful.</returns>
 bool EldenParry::processProjectileParry(RE::Actor* a_parrier, RE::Projectile* a_projectile, RE::hkpCollidable* a_projectile_collidable)
 {
-	if (canParryProj(a_parrier, a_projectile)) {
+	if (canParry(a_parrier, a_projectile)) {
 		RE::TESObjectREFR* shooter = nullptr;
 		if (a_projectile->GetProjectileRuntimeData().shooter && a_projectile->GetProjectileRuntimeData().shooter.get()) {
 			shooter = a_projectile->GetProjectileRuntimeData().shooter.get().get();
@@ -204,7 +181,7 @@ void EldenParry::processGuardBash(RE::Actor* a_basher, RE::Actor* a_blocker)
 	if (!a_blocker->IsBlocking() || !inBlockAngle(a_blocker, a_basher) || a_blocker->AsActorState()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
 		return;
 	}
-	Utils::triggerStagger(a_basher, a_blocker, applyRiposteScore(a_basher));
+	Utils::triggerStagger(a_basher, a_blocker);
 	playGuardBashEffects(a_basher);
 	RE::PlayerCharacter::GetSingleton()->AddSkillExperience(RE::ActorValue::kBlock, Settings::fGuardBashExp);
 }
@@ -248,23 +225,6 @@ void EldenParry::cacheParryCost(RE::Actor* a_actor, float a_cost) {
 	//logger::logger::info("cache parry cost for {}: {}", a_actor->GetName(), a_cost);
 	std::lock_guard<std::shared_mutex> lock(mtx_parryCostQueue);
 	_parryCostQueue[a_actor] = a_cost;
-}
-
-double EldenParry::applyRiposteScore(RE::Actor* a_actor) {
-
-	std::lock_guard<std::shared_mutex> lock(mtx_riposteScoreQueue);
-	if (_riposteScoreQueue.contains(a_actor)) {
-        double a_costt = _riposteScoreQueue[a_actor];
-		_riposteScoreQueue.erase(a_actor);
-		return a_costt;
-	}
-	return 0.0;
-}
-
-void EldenParry::cacheRiposteScore(RE::Actor* a_actor, double a_cost) {
-	//logger::logger::info("cache parry cost for {}: {}", a_actor->GetName(), a_cost);
-	std::lock_guard<std::shared_mutex> lock(mtx_riposteScoreQueue);
-	_riposteScoreQueue[a_actor] = a_cost;
 }
 
 void EldenParry::negateParryCost(RE::Actor* a_actor) {
@@ -347,84 +307,88 @@ double EldenParry::GetScore(RE::Actor *actor, const Milf::Scores &scoreSettings)
 {
 	double score = 0.0;
 
-	// Need to check for Animated Armoury keywords first, because its weapons
-	// ALSO have some of the vanilla weapon type keywords (but we want the AA
-	// ones to take precedence).
-	// if (weapon->HasKeywordString("WeapTypeQtrStaff"))
-	// {
-	// 	score += scoreSettings.twoHandQuarterstaffScore;
-	// }
-	// else if (weapon->HasKeywordString("WeapTypeHalberd"))
-	// {
-	// 	score += scoreSettings.twoHandHalberdScore;
-	// }
-	// else if (weapon->HasKeywordString("WeapTypePike"))
-	// {
-	// 	score += scoreSettings.twoHandPikeScore;
-	// }
-	// else if (weapon->HasKeywordString("WeapTypeKatana"))
-	// {
-	// 	score += scoreSettings.oneHandKatanaScore;
-	// }
-	// else if (weapon->HasKeywordString("WeapTypeRapier"))
-	// {
-	// 	score += scoreSettings.oneHandRapierScore;
-	// }
-	// else if (weapon->HasKeywordString("WeapTypeClaw"))
-	// {
-	// 	score += scoreSettings.oneHandClawsScore;
-	// }
-	// else if (weapon->HasKeywordString("WeapTypeWhip"))
-	// {
-	// 	score += scoreSettings.oneHandWhipScore;
-	// }
-	// else if (weapon->HasKeywordString("WeapTypeWarhammer"))
-	// {
-	// 	score += scoreSettings.twoHandWarhammerScore;
-	// }
-	// else if (weapon->HasKeywordString("WeapTypeBattleaxe"))
-	// {
-	// 	score += scoreSettings.twoHandAxeScore;
-	// }
-	// else if (weapon->HasKeywordString("WeapTypeGreatsword"))
-	// {
-	// 	score += scoreSettings.twoHandSwordScore;
-	// }
-	// else if (weapon->HasKeywordString("WeapTypeMace"))
-	// {
-	// 	score += scoreSettings.oneHandMaceScore;
-	// }
-	// else if (weapon->HasKeywordString("WeapTypeWarAxe"))
-	// {
-	// 	score += scoreSettings.oneHandAxeScore;
-	// }
-	// else if (weapon->HasKeywordString("WeapTypeSword"))
-	// {
-	// 	score += scoreSettings.oneHandSwordScore;
-	// }
-	// else if (weapon->HasKeywordString("WeapTypeDagger"))
-	// {
-	// 	score += scoreSettings.oneHandDaggerScore;
-	// }
+	RE::TESObjectWEAP* weapon;
 
-	blockSpark::getBipedIndex(x, x);
+	bool WeaponShield = false;
 
-	const auto actorValue = weapon->weaponData.skill.get();
-	switch (actorValue)
-	{
-	case RE::ActorValue::kOneHanded:
-		score += (scoreSettings.weaponSkillWeight *
-				  actor->AsActorValueOwner()->GetActorValue(RE::ActorValue::kOneHanded));
-		break;
-	case RE::ActorValue::kTwoHanded:
-		score += (scoreSettings.weaponSkillWeight *
-				  actor->AsActorValueOwner()->GetActorValue(RE::ActorValue::kTwoHanded));
-		break;
-	default:
-		// Do nothing
-		break;
+	auto defenderLeftEquipped = actor->GetEquippedObject(true);
+	auto defenderRightEquipped = actor->GetEquippedObject(false);
+	
+	if (defenderLeftEquipped && (defenderLeftEquipped->IsWeapon() || defenderLeftEquipped->IsArmor())) {
+
+		if (defenderLeftEquipped->As<RE::TESObjectWEAP>()) {
+			weapon = (defenderLeftEquipped->As<RE::TESObjectWEAP>());
+		
+			switch (weapon->GetWeaponType()) {
+			case RE::WEAPON_TYPE::kOneHandSword:
+				score += scoreSettings.oneHandSwordScore;
+				break;
+			case RE::WEAPON_TYPE::kOneHandAxe:
+			    score += scoreSettings.oneHandAxeScore;
+				break;
+			case RE::WEAPON_TYPE::kOneHandMace:
+			    score += scoreSettings.oneHandMaceScore;
+				break;
+			case RE::WEAPON_TYPE::kOneHandDagger:
+			    score += scoreSettings.oneHandDaggerScore;
+				break;
+			}
+		} else if (defenderLeftEquipped->IsArmor()) {
+			WeaponShield = true;
+			score += 70.0;
+		}
+
+	} else if (defenderRightEquipped && (defenderRightEquipped->IsWeapon())) {
+		weapon = (defenderRightEquipped->As<RE::TESObjectWEAP>());
+		switch (weapon->GetWeaponType())
+		{
+		case RE::WEAPON_TYPE::kOneHandSword:
+			score += scoreSettings.oneHandSwordScore;
+			break;
+		case RE::WEAPON_TYPE::kOneHandAxe:
+			score += scoreSettings.oneHandAxeScore;
+			break;
+		case RE::WEAPON_TYPE::kOneHandMace:
+			score += scoreSettings.oneHandMaceScore;
+			break;
+		case RE::WEAPON_TYPE::kOneHandDagger:
+			score += scoreSettings.oneHandDaggerScore;
+			break;
+		case RE::WEAPON_TYPE::kTwoHandAxe:
+			score += scoreSettings.twoHandAxeScore;
+			break;
+		case RE::WEAPON_TYPE::kTwoHandSword:
+			score += scoreSettings.twoHandSwordScore;
+			break;
+		case RE::WEAPON_TYPE::kHandToHandMelee:
+			score += -50.0;
+			break;
+		}
 	}
 
+	if (WeaponShield == false) {
+
+		const auto actorValue = weapon->weaponData.skill.get();
+		switch (actorValue)
+		{
+		case RE::ActorValue::kOneHanded:
+			score += (scoreSettings.weaponSkillWeight *
+					  actor->AsActorValueOwner()->GetActorValue(RE::ActorValue::kOneHanded));
+			break;
+		case RE::ActorValue::kTwoHanded:
+			score += (scoreSettings.weaponSkillWeight *
+					  actor->AsActorValueOwner()->GetActorValue(RE::ActorValue::kTwoHanded));
+			break;
+		default:
+			// Do nothing
+			break;
+		}
+	} else {
+		score += (scoreSettings.weaponSkillWeight *
+				  actor->AsActorValueOwner()->GetActorValue(RE::ActorValue::kBlock));
+	}
+
+	
 	const auto race = actor->GetRace();
 	const auto raceFormID = race->formID;
 
@@ -475,7 +439,7 @@ double EldenParry::GetScore(RE::Actor *actor, const Milf::Scores &scoreSettings)
 		score += scoreSettings.femaleScore;
 	}
 
-	if (///Define powerattacking))
+	if (inlineUtils::isPowerAttacking(actor))
 	{
 		score += scoreSettings.powerAttackScore;
 	}
@@ -489,26 +453,17 @@ double EldenParry::GetScore(RE::Actor *actor, const Milf::Scores &scoreSettings)
 }
 
 
-
-
-bool EldenParry::AttackerBeatsParry(RE::Actor *attacker, RE::Actor *target)
+double EldenParry::AttackerBeatsParry(RE::Actor *attacker, RE::Actor *target)
 {
-
-	if (!Milf::GetSingleton()->core.useScoreSystem)
-	{
-		// The score-based system has been disabled in INI, so attackers can never overpower parries
-		return false;
-	}
-
+	// if (!Milf::GetSingleton()->core.useScoreSystem)
+	// {
+	// 	// The score-based system has been disabled in INI, so attackers can never overpower parries
+	// 	return false;
+	// }
 	const double attackerScore = GetScore(attacker, Milf::GetSingleton()->scores);
 	const double targetScore = GetScore(target, Milf::GetSingleton()->scores);
 
-	double reprisal = (targetScore - attackerScore);
-
-	EldenParry::GetSingleton()->cacheRiposteScore(target, reprisal);
-
-
-	return ((attackerScore - targetScore) >= Milf::GetSingleton()->scores.scoreDiffThreshold);
+	return (attackerScore - targetScore); // >= Milf::GetSingleton()->scores.scoreDiffThreshold);
 }
 
 

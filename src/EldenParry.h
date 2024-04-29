@@ -123,7 +123,7 @@ class EldenParry
 public:
     double GetScore(RE::Actor *actor, const Milf::Scores &scoreSettings);
 	
-	bool AttackerBeatsParry(RE::Actor *attacker, RE::Actor *target);
+	double AttackerBeatsParry(RE::Actor *attacker, RE::Actor *target);
 
 	const RE::TESObjectWEAP *const GetAttackWeapon(RE::AIProcess *const aiProcess);
 
@@ -153,10 +153,6 @@ public:
 	void applyParryCost(RE::Actor *a_actor);
 	void cacheParryCost(RE::Actor *a_actor, float a_cost);
 
-	double applyRiposteScore(RE::Actor* a_actor);
-
-	void cacheRiposteScore(RE::Actor* a_actor, double a_cost);
-
 	void negateParryCost(RE::Actor *a_actor);
 
 	void playGuardBashEffects(RE::Actor *a_actor);
@@ -173,17 +169,13 @@ private:
 	void playParryEffects(RE::Actor *a_parrier);
 
 	bool inParryState(RE::Actor *a_parrier);
-	bool canParry(RE::Actor *a_parrier, RE::TESObjectREFR *a_obj, RE::Actor *a_attacker);
-	bool canParryProj(RE::Actor *a_parrier, RE::TESObjectREFR *a_obj);
+	bool canParry(RE::Actor *a_parrier, RE::TESObjectREFR *a_obj);
 	bool inBlockAngle(RE::Actor *a_blocker, RE::TESObjectREFR *a_obj);
-	bool ParryContext(RE::Actor *a_agressor, RE::Actor *a_victim);
 	static PRECISION_API::PreHitCallbackReturn precisionPrehitCallbackFunc(const PRECISION_API::PrecisionHitData &a_precisionHitData);
 
 	std::unordered_map<RE::Actor *, float> _parryCostQueue;
 	std::unordered_set<RE::Actor *> _parrySuccessActors;
 	std::unordered_map<RE::Actor *, float> _parryTimer;
-
-	std::unordered_map<RE::Actor *, double> _riposteScoreQueue;
 
 	RE::BGSSoundDescriptorForm *_parrySound_shd;
 	RE::BGSSoundDescriptorForm *_parrySound_wpn;
@@ -191,9 +183,6 @@ private:
 	float _parryAngle;
 
 	std::shared_mutex mtx_parryCostQueue;
-
-	std::shared_mutex mtx_riposteScoreQueue;
-
 	std::shared_mutex mtx_parrySuccessActors;
 	std::shared_mutex mtx_parryTimer;
 
