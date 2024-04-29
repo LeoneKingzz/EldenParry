@@ -118,11 +118,7 @@ bool EldenParry::ParryContext(RE::Actor* a_aggressor, RE::Actor* a_victim)
 
 	} else if (Settings::bEnableWeaponParry)
 	{
-		RE::AIProcess *const attackerAI = a_aggressor->GetActorRuntimeData().currentProcess;
-		RE::AIProcess *const targetAI = a_victim->GetActorRuntimeData().currentProcess;
-		auto attackerWeapon = GetAttackWeapon(attackerAI);
-		auto targetWeapon = GetAttackWeapon(targetAI);
-		if (!AttackerBeatsParry(a_aggressor, a_victim, attackerWeapon, targetWeapon, attackerAI, targetAI))
+		if (!AttackerBeatsParry(a_aggressor, a_victim,))
 		{
 			return true;
 		}
@@ -347,7 +343,7 @@ const RE::TESObjectWEAP *const EldenParry::GetAttackWeapon(RE::AIProcess *const 
 	return nullptr;
 }
 
-double EldenParry::GetScore(RE::Actor *actor, const RE::TESObjectWEAP *weapon, RE::AIProcess *const actorAI, const Milf::Scores &scoreSettings)
+double EldenParry::GetScore(RE::Actor *actor, const Milf::Scores &scoreSettings)
 {
 	double score = 0.0;
 
@@ -410,6 +406,8 @@ double EldenParry::GetScore(RE::Actor *actor, const RE::TESObjectWEAP *weapon, R
 	// {
 	// 	score += scoreSettings.oneHandDaggerScore;
 	// }
+
+	blockSpark::getBipedIndex(x, x);
 
 	const auto actorValue = weapon->weaponData.skill.get();
 	switch (actorValue)
@@ -477,7 +475,7 @@ double EldenParry::GetScore(RE::Actor *actor, const RE::TESObjectWEAP *weapon, R
 		score += scoreSettings.femaleScore;
 	}
 
-	if (actorAI->high->attackData->data.flags.any(RE::AttackData::AttackFlag::kPowerAttack))
+	if (///Define powerattacking))
 	{
 		score += scoreSettings.powerAttackScore;
 	}
@@ -493,9 +491,7 @@ double EldenParry::GetScore(RE::Actor *actor, const RE::TESObjectWEAP *weapon, R
 
 
 
-bool EldenParry::AttackerBeatsParry(RE::Actor *attacker, RE::Actor *target, const RE::TESObjectWEAP *attackerWeapon,
-									const RE::TESObjectWEAP *targetWeapon, RE::AIProcess *const attackerAI,
-									RE::AIProcess *const targetAI)
+bool EldenParry::AttackerBeatsParry(RE::Actor *attacker, RE::Actor *target)
 {
 
 	if (!Milf::GetSingleton()->core.useScoreSystem)
@@ -504,8 +500,8 @@ bool EldenParry::AttackerBeatsParry(RE::Actor *attacker, RE::Actor *target, cons
 		return false;
 	}
 
-	const double attackerScore = GetScore(attacker, attackerWeapon, attackerAI, Milf::GetSingleton()->scores);
-	const double targetScore = GetScore(target, targetWeapon, targetAI, Milf::GetSingleton()->scores);
+	const double attackerScore = GetScore(attacker, Milf::GetSingleton()->scores);
+	const double targetScore = GetScore(target, Milf::GetSingleton()->scores);
 
 	double reprisal = (targetScore - attackerScore);
 

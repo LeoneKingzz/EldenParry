@@ -119,11 +119,11 @@ private:
 };
 
 class EldenParry
-{
+{   
 public:
-    double GetScore(RE::Actor *actor, const RE::TESObjectWEAP *weapon, RE::AIProcess *const actorAI, const Milf::Scores &scoreSettings);
+    double GetScore(RE::Actor *actor, const Milf::Scores &scoreSettings);
 	
-	bool AttackerBeatsParry(RE::Actor *attacker, RE::Actor *target, const RE::TESObjectWEAP *attackerWeapon, const RE::TESObjectWEAP *targetWeapon, RE::AIProcess *const attackerAI, RE::AIProcess *const targetAI);
+	bool AttackerBeatsParry(RE::Actor *attacker, RE::Actor *target);
 
 	const RE::TESObjectWEAP *const GetAttackWeapon(RE::AIProcess *const aiProcess);
 

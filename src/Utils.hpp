@@ -341,6 +341,7 @@ public:
 
 class blockSpark
 {
+	friend class EldenParry;
 private:
 	static auto getBipedIndex(RE::TESForm* parryEquipment, bool rightHand) {
 		if (!parryEquipment)
